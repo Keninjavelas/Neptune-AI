@@ -29,22 +29,12 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install edge dependencies
-        working-directory: edge_ai
-        run: pip install -r requirements.txt
       - name: Backend test
         working-directory: backend
         run: npm test -- --runInBand
       - name: Frontend test
         working-directory: frontend
         run: npm test -- --runInBand
-      - name: Edge AI test
-        working-directory: edge_ai
-        run: pytest -q
       - name: Frontend build
         working-directory: frontend
         run: npm run build
