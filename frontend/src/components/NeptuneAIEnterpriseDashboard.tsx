@@ -60,6 +60,7 @@ const PremiumCard = memo(({ children, className = "", alert = false, title = "",
     {children}
   </div>
 ));
+PremiumCard.displayName = "PremiumCard";
 
 const MetricCard = memo(({ label, value, unit = "", subtext = "", statusColor = "text-slate-50", icon: Icon, alert = false, pulsing = false }: any) => (
   <motion.div 
@@ -88,6 +89,7 @@ const MetricCard = memo(({ label, value, unit = "", subtext = "", statusColor = 
     </div>
   </motion.div>
 ));
+MetricCard.displayName = "MetricCard";
 
 const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
   <PremiumCard title="Flow Dynamics" icon={BarChart3} className="flex-1">
@@ -130,6 +132,7 @@ const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
     </div>
   </PremiumCard>
 ));
+FlowDynamics.displayName = "FlowDynamics";
 
 const OperationsStream = memo(({ logs }: any) => (
   <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[300px]">
@@ -171,6 +174,7 @@ const OperationsStream = memo(({ logs }: any) => (
     </div>
   </PremiumCard>
 ));
+OperationsStream.displayName = "OperationsStream";
 
 const GridDistribution = memo(({ Factory, Home, Waves }: any) => (
   <PremiumCard title="Grid Distribution" icon={Network} className="flex-1">
@@ -216,6 +220,7 @@ const GridDistribution = memo(({ Factory, Home, Waves }: any) => (
     </div>
   </PremiumCard>
 ));
+GridDistribution.displayName = "GridDistribution";
 
 const SystemIntegrity = memo(({ ShieldAlert, Activity, Database }: any) => (
   <PremiumCard title="System Integrity" icon={ShieldAlert} className="h-auto">
@@ -237,6 +242,7 @@ const SystemIntegrity = memo(({ ShieldAlert, Activity, Database }: any) => (
     </div>
   </PremiumCard>
 ));
+SystemIntegrity.displayName = "SystemIntegrity";
 
 const ControlProtocol = memo(({ isManual, valveAngle, setIsManual, setValveAngle }: any) => {
   const [localAngle, setLocalAngle] = useState(valveAngle);
@@ -308,6 +314,7 @@ const ControlProtocol = memo(({ isManual, valveAngle, setIsManual, setValveAngle
     </PremiumCard>
   );
 });
+ControlProtocol.displayName = "ControlProtocol";
 
 // --- Main Dashboard ---
 

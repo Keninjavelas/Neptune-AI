@@ -42,7 +42,7 @@ export function useScrambleText(value: string | number, duration = 300) {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
       startTimeRef.current = undefined;
     };
-  }, [targetValue, duration]);
+  }, [targetValue, duration, displayValue]);
 
   return displayValue;
 }

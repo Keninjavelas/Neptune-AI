@@ -300,7 +300,7 @@ export default function NeptuneAICommandCenter() {
                       <span className="text-slate-600 shrink-0 select-none">{">"}</span>
                       <div>
                         <span className={`font-bold tracking-widest uppercase ${
-                          log.source === "AI_CORE" ? "text-cyan-400" : log.source === "ALERT" ? "text-red-400" : "text-slate-400"
+                          log.source === "AI" ? "text-cyan-400" : log.source === "ALERT" ? "text-red-400" : "text-slate-400"
                         }`}>
                           [{log.source}]
                         </span>

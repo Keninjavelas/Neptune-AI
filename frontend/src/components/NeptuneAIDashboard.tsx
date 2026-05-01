@@ -504,6 +504,49 @@ export default function NeptuneAIDashboard({
     addEvent('success', 'Normal flow detected');
   }, [initialFlowData, addEvent]);
 
+  // Recovery sequence after leak
+  const startRecovery = useCallback(() => {
+    addEvent('info', 'Stabilization mode activated');
+    let recoveryPhase = 0;
+
+    const recoveryInterval = setInterval(() => {
+      recoveryPhase += 1;
+
+      // Gradually restore flow
+      setCurrentFlow((prev) => {
+        const restored = Math.min(4.2, prev + 0.15);
+        return restored;
+      });
+
+      // Reduce leak probability
+      setAiStatus((prev) => ({
+        ...prev,
+        leakProbability: Math.max(0, prev.leakProbability - 8),
+        state: 'stabilizing',
+        decision: 'Gradual flow restoration',
+      }));
+
+      // Open valve gradually
+      setAngle((prev) => Math.min(90, prev + 5));
+
+      // Restore system health
+      setSystemHealth((prev) => Math.min(100, prev + 2.5));
+
+      if (recoveryPhase >= 8) {
+        clearInterval(recoveryInterval);
+        setIsSimulatingLeak(false);
+        setAiStatus((prev) => ({
+          ...prev,
+          state: 'monitoring',
+          leakProbability: 0,
+          decision: 'Maintain current flow',
+        }));
+        addEvent('success', 'System fully recovered');
+        addEvent('success', 'Returning to normal operation');
+      }
+    }, 500);
+  }, [addEvent]);
+
   // Simulate leak scenario
   const simulateLeak = useCallback(() => {
     setIsSimulatingLeak(true);
@@ -551,50 +594,7 @@ export default function NeptuneAIDashboard({
         }, 3000);
       }
     }, 400);
-  }, [addEvent]);
-
-  // Recovery sequence after leak
-  const startRecovery = useCallback(() => {
-    addEvent('info', 'Stabilization mode activated');
-    let recoveryPhase = 0;
-
-    const recoveryInterval = setInterval(() => {
-      recoveryPhase += 1;
-
-      // Gradually restore flow
-      setCurrentFlow((prev) => {
-        const restored = Math.min(4.2, prev + 0.15);
-        return restored;
-      });
-
-      // Reduce leak probability
-      setAiStatus((prev) => ({
-        ...prev,
-        leakProbability: Math.max(0, prev.leakProbability - 8),
-        state: 'stabilizing',
-        decision: 'Gradual flow restoration',
-      }));
-
-      // Open valve gradually
-      setAngle((prev) => Math.min(90, prev + 5));
-
-      // Restore system health
-      setSystemHealth((prev) => Math.min(100, prev + 2.5));
-
-      if (recoveryPhase >= 8) {
-        clearInterval(recoveryInterval);
-        setIsSimulatingLeak(false);
-        setAiStatus((prev) => ({
-          ...prev,
-          state: 'monitoring',
-          leakProbability: 0,
-          decision: 'Maintain current flow',
-        }));
-        addEvent('success', 'System fully recovered');
-        addEvent('success', 'Returning to normal operation');
-      }
-    }, 500);
-  }, [addEvent]);
+  }, [addEvent, startRecovery]);
 
   // Automatic demo mode
   useEffect(() => {
