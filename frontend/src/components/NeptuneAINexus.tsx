@@ -44,8 +44,8 @@ const TerminalLog = ({ logs }: { logs: any[] }) => {
 // --- Main Page ---
 
 export default function NeptuneAINexus() {
-  const { flow, valveAngle, isCritical, logs, pushLog, setValveAngle } = useMockTelemetry();
-  const [manualOverride, setManualOverride] = useState(false);
+  const { flow, valveAngle, status, logs, setValveAngle, isManual, setIsManual } = useMockTelemetry();
+  const isCritical = status === "critical";
 
   return (
     <div className={`relative min-h-screen w-full overflow-hidden text-slate-50 font-sans ${isCritical ? "animate-shake" : ""}`}>
@@ -154,23 +154,22 @@ export default function NeptuneAINexus() {
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Manual Override</span>
                   <button 
                     onClick={() => {
-                      setManualOverride(!manualOverride);
-                      pushLog("SYS", `Manual override ${!manualOverride ? 'ENGAGED' : 'RELEASED'}.`);
+                      setIsManual(!isManual);
                     }}
-                    className={`relative w-12 h-6 rounded-full transition-colors duration-500 ${manualOverride ? "bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.6)]" : "bg-white/5"}`}
+                    className={`relative w-12 h-6 rounded-full transition-colors duration-500 ${isManual ? "bg-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.6)]" : "bg-white/5"}`}
                   >
                     <motion.div 
                       className="absolute top-1 left-1 w-4 h-4 bg-white rounded-full"
-                      animate={{ x: manualOverride ? 24 : 0 }}
+                      animate={{ x: isManual ? 24 : 0 }}
                     />
                   </button>
                 </div>
                 
                 <input 
                   type="range" min="0" max="180" value={valveAngle}
-                  disabled={!manualOverride}
+                  disabled={!isManual}
                   onChange={(e) => setValveAngle(parseInt(e.target.value))}
-                  className={`w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer accent-cyan-500 ${!manualOverride && "opacity-20 pointer-events-none"}`}
+                  className={`w-full h-1 bg-white/5 rounded-lg appearance-none cursor-pointer accent-cyan-500 ${!isManual && "opacity-20 pointer-events-none"}`}
                 />
               </div>
             </div>

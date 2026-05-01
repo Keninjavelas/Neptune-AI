@@ -108,8 +108,8 @@ const ZoneCard = ({ zone }: any) => (
 
 export default function NeptuneAICommandCenter() {
   const {
-    flow, tds, turbidity, level, valveAngle, isManual,
-    wqi, riskScore, alerts, status, logs, zones,
+    flow, tdsValue, tankLevel, valveAngle, isManual,
+    wqi, riskScore, alerts, status, logs,
     setValveAngle, setIsManual, resetAlerts
   } = useMockTelemetry();
 
@@ -182,7 +182,7 @@ export default function NeptuneAICommandCenter() {
           <MetricCard label="System Status" value={status === "online" ? "Active" : "Alert"} icon={ShieldCheck} color={status === "online" ? "text-emerald-400" : "text-amber-400"} />
           <MetricCard label="Flow Rate" value={flow?.toFixed(1) ?? "0.0"} unit="LPM" icon={Activity} color="text-cyan-400" trend={(flow ?? 0) * 10} />
           <MetricCard label="Quality Index" value={wqi ?? 0} unit="WQI" icon={Droplet} color={(wqi ?? 0) > 90 ? "text-cyan-400" : "text-amber-400"} trend={wqi} />
-          <MetricCard label="Tank Capacity" value={level?.toFixed(0) ?? "0"} unit="%" icon={Waves} color="text-blue-400" trend={level} />
+          <MetricCard label="Tank Capacity" value={tankLevel?.toFixed(0) ?? "0"} unit="%" icon={Waves} color="text-blue-400" trend={tankLevel} />
           <MetricCard label="Active Alerts" value={alerts ?? 0} icon={AlertTriangle} color={(alerts ?? 0) > 0 ? "text-red-400" : "text-slate-400"} />
           <MetricCard label="AI Risk Score" value={riskScore ?? 0} unit="%" icon={Zap} color={(riskScore ?? 0) < 20 ? "text-emerald-400" : "text-amber-400"} trend={riskScore} />
         </div>
@@ -228,11 +228,11 @@ export default function NeptuneAICommandCenter() {
                   <div className="space-y-4">
                     <div>
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">TDS (Purity)</p>
-                      <p className="text-2xl font-black text-slate-100">{tds} <span className="text-xs text-slate-500 uppercase">ppm</span></p>
+                      <p className="text-2xl font-black text-slate-100">{tdsValue} <span className="text-xs text-slate-500 uppercase">ppm</span></p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Turbidity</p>
-                      <p className="text-2xl font-black text-slate-100">{turbidity} <span className="text-xs text-slate-500 uppercase">NTU</span></p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">AI WQI</p>
+                      <p className="text-2xl font-black text-slate-100">{wqi} <span className="text-xs text-slate-500 uppercase">index</span></p>
                     </div>
                   </div>
                   <div className="flex flex-col items-center justify-center p-4 rounded-3xl bg-cyan-500/5 border border-cyan-500/10">
@@ -285,9 +285,9 @@ export default function NeptuneAICommandCenter() {
             </div>
           </div>
 
-          {/* Right: Feed & Zones (4 cols) */}
+          {/* Right: Feed (4 cols) */}
           <div className="lg:col-span-4 space-y-8">
-            <GlassPanel title="AI Intelligence Feed" className="h-[400px] flex flex-col">
+            <GlassPanel title="AI Intelligence Feed" className="h-full flex flex-col">
               <div className="flex-1 overflow-y-auto p-6 font-mono text-[11px] leading-relaxed scrollbar-hide">
                 <AnimatePresence initial={false}>
                   {logs.map(log => (
@@ -318,10 +318,6 @@ export default function NeptuneAICommandCenter() {
                 </div>
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Neural Link Active</p>
               </div>
-            </GlassPanel>
-
-            <GlassPanel title="Water Distribution Zones" className="p-6 space-y-4">
-              {zones.map(zone => <ZoneCard key={zone.id} zone={zone} />)}
             </GlassPanel>
 
             <GlassPanel title="Automation Pipeline" className="p-6">
