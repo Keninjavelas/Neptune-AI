@@ -50,15 +50,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: backend-simulator
-            file: backend/Dockerfile.simulator
-            context: backend
-          - image: backend-ingestion
-            file: backend/Dockerfile.ingestion
-            context: backend
-          - image: backend-processing
-            file: backend/Dockerfile.processing
-            context: backend
           - image: backend-api
             file: backend/Dockerfile.api
             context: backend

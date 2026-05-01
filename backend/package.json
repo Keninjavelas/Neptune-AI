@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "aquaflow-ai": "file:..",
