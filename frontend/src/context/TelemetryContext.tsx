@@ -33,9 +33,14 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   // 2. Hardware Bridge (WebSocket)
   const hw = useHardwareTelemetry();
 
-  // 3. Dynamic Data Selection
+  // 3. Dynamic Data Selection (Single Source of Truth)
   const activeTelemetry = useMemo(() => {
-    return (USE_LIVE_HARDWARE && hw.telemetry) ? hw.telemetry : sim.telemetry;
+    // If live hardware is enabled AND we have a packet, it's the absolute truth.
+    if (USE_LIVE_HARDWARE && hw.telemetry) {
+      return hw.telemetry;
+    }
+    // Otherwise fallback to simulation
+    return sim.telemetry;
   }, [hw.telemetry, sim.telemetry]);
 
   // Combined logs

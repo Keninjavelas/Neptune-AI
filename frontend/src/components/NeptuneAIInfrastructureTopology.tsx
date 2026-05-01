@@ -58,16 +58,16 @@ const SmartCityZone = ({ name, icon: Icon, active, color = "cyan" }: any) => {
 export default function NeptuneAIInfrastructureTopology() {
   const { telemetry } = useTelemetry();
   const {
-    flowRate: flow,
-    tankLevel,
-    tds: tdsValue,
-    valveAngle,
-    anomalyLevel,
-    relayState,
-    isManual
-  } = telemetry;
+    flowRate: flow = 0,
+    tankLevel = 0,
+    tds: tdsValue = 0,
+    valveAngle = 0,
+    systemState = "NORMAL",
+    relayState = false,
+    isManual = false
+  } = telemetry ?? {};
 
-  const isCritical = anomalyLevel === 2;
+  const isCritical = systemState === "CRITICAL";
 
   return (
     <div className={`relative w-full h-full min-h-[600px] bg-slate-950/20 rounded-[1.5rem] border border-slate-800/40 flex flex-col shadow-inner transition-colors duration-1000 ${

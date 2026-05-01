@@ -368,19 +368,19 @@ export default function NeptuneAIEnterpriseDashboard() {
   } = useTelemetry();
 
   const {
-    flowRate: flow,
-    tankLevel,
-    tds: tdsValue,
-    valveAngle,
-    status,
-    isManual,
-    riskScore,
-    stabilityScore,
-    alerts,
-    anomalyLevel
-  } = telemetry;
+    flowRate: flow = 0,
+    tankLevel = 0,
+    tds: tdsValue = 0,
+    valveAngle = 0,
+    systemState = "NORMAL",
+    riskScore = 0,
+    stabilityScore = 100,
+    alerts = 0,
+    anomalyLevel = 0,
+    isManual = false
+  } = telemetry ?? {};
 
-  const wqi = 100 - (riskScore * 0.5); // Derived WQI
+  const wqi = 100 - ((riskScore ?? 0) * 0.5); // Derived WQI
 
   const [currentTime, setCurrentTime] = useState<string>("--:--:--");
   const [chartData, setChartData] = useState<any[]>([]);
@@ -414,16 +414,16 @@ export default function NeptuneAIEnterpriseDashboard() {
 
   return (
     <div className={`min-h-screen bg-slate-950 text-slate-50 font-sans antialiased p-3 md:p-4 lg:p-6 selection:bg-cyan-500/30 overflow-x-hidden transition-colors duration-1000 ${
-      anomalyLevel === 2 ? 'shadow-[inset_0_0_100px_rgba(239,68,68,0.15)] bg-slate-950' : 
-      anomalyLevel === 1 ? 'shadow-[inset_0_0_100px_rgba(245,158,11,0.1)]' : ''
+      systemState === "CRITICAL" ? 'shadow-[inset_0_0_100px_rgba(239,68,68,0.15)] bg-slate-950' : 
+      systemState === "WARNING" ? 'shadow-[inset_0_0_100px_rgba(245,158,11,0.1)]' : ''
     }`}>
 
-      <GlobalAlertBanner anomalyLevel={anomalyLevel} />
+      <GlobalAlertBanner systemState={systemState} />
 
       {/* --- Global Background Layer --- */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className={`absolute top-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full blur-[120px] animate-pulse transition-colors duration-1000 ${
-          anomalyLevel === 2 ? 'bg-red-500/10' : 'bg-cyan-500/5'
+          systemState === "CRITICAL" ? 'bg-red-500/10' : 'bg-cyan-500/5'
         }`} />
         <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[120px]" />
       </div>
@@ -436,7 +436,7 @@ export default function NeptuneAIEnterpriseDashboard() {
             <motion.div
               whileHover={{ scale: 1.05 }}
               className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-white/10 transition-all duration-500 ${
-                anomalyLevel === 2 ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-500/30' : 'bg-gradient-to-br from-cyan-400 to-blue-600 shadow-cyan-500/30'
+                systemState === "CRITICAL" ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-500/30' : 'bg-gradient-to-br from-cyan-400 to-blue-600 shadow-cyan-500/30'
               }`}
             >
               <Waves className="text-slate-950" size={20} />
@@ -444,10 +444,10 @@ export default function NeptuneAIEnterpriseDashboard() {
             <div>
               <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
                 <span className="text-white uppercase">NEPTUNE</span>
-                <span className={`font-light italic transition-colors duration-500 ${anomalyLevel === 2 ? 'text-red-400' : 'text-cyan-400'}`}>AI</span>
+                <span className={`font-light italic transition-colors duration-500 ${systemState === "CRITICAL" ? 'text-red-400' : 'text-cyan-400'}`}>AI</span>
               </h1>
               <div className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5 flex items-center gap-2">
-                <div className={`w-4 h-[1px] transition-colors duration-500 ${anomalyLevel === 2 ? 'bg-red-500/30' : 'bg-cyan-500/30'}`} />
+                <div className={`w-4 h-[1px] transition-colors duration-500 ${systemState === "CRITICAL" ? 'bg-red-500/30' : 'bg-cyan-500/30'}`} />
                 Smart Water Infrastructure Control
               </div>
             </div>
@@ -462,13 +462,13 @@ export default function NeptuneAIEnterpriseDashboard() {
               <div className="w-[1px] h-6 bg-slate-800" />
               <div className="flex flex-col items-end">
                 <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Network</span>
-                <div className={`text-[10px] font-bold flex items-center gap-1.5 transition-colors duration-500 ${anomalyLevel === 2 ? 'text-red-400' : 'text-emerald-400'}`}>
+                <div className={`text-[10px] font-bold flex items-center gap-1.5 transition-colors duration-500 ${systemState === "CRITICAL" ? 'text-red-400' : 'text-emerald-400'}`}>
                   <motion.div
                     animate={{ opacity: [0.4, 1, 0.4] }}
                     transition={{ repeat: Infinity, duration: 2 }}
-                    className={`w-1 h-1 rounded-full shadow-lg ${anomalyLevel === 2 ? 'bg-red-400 shadow-red-400/50' : 'bg-emerald-400 shadow-emerald-400/50'}`}
+                    className={`w-1 h-1 rounded-full shadow-lg ${systemState === "CRITICAL" ? 'bg-red-400 shadow-red-400/50' : 'bg-emerald-400 shadow-emerald-400/50'}`}
                   />
-                  {anomalyLevel === 2 ? 'CONGESTED' : 'ACTIVE'}
+                  {systemState === "CRITICAL" ? 'CONGESTED' : 'ACTIVE'}
                 </div>
               </div>
               <div className="w-[1px] h-6 bg-slate-800" />
@@ -486,12 +486,12 @@ export default function NeptuneAIEnterpriseDashboard() {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <MetricCard
             label="System State"
-            value={anomalyLevel === 0 ? "NOMINAL" : anomalyLevel === 1 ? "WARNING" : "CRITICAL"}
-            statusColor={anomalyLevel === 0 ? "text-emerald-400" : anomalyLevel === 1 ? "text-amber-400" : "text-red-500"}
+            value={systemState}
+            statusColor={systemState === "NORMAL" ? "text-emerald-400" : systemState === "WARNING" ? "text-amber-400" : "text-red-500"}
             icon={ShieldCheck}
-            pulsing={anomalyLevel === 0}
-            subtext={anomalyLevel === 0 ? "Integrity Secure" : "Anomaly Detected"}
-            alert={anomalyLevel > 0}
+            pulsing={systemState === "NORMAL"}
+            subtext={systemState === "NORMAL" ? "Integrity Secure" : "Anomaly Detected"}
+            alert={systemState !== "NORMAL"}
           />
           <MetricCard
             label="Current Flow"
@@ -532,10 +532,10 @@ export default function NeptuneAIEnterpriseDashboard() {
             label="AI Risk Score"
             value={riskScore ?? 0}
             unit={THRESHOLDS.RISK_SCORE.UNIT}
-            statusColor={riskScore > THRESHOLDS.RISK_SCORE.HIGH ? "text-red-500" : riskScore > THRESHOLDS.RISK_SCORE.LOW ? "text-amber-400" : "text-emerald-500"}
+            statusColor={(riskScore ?? 0) > THRESHOLDS.RISK_SCORE.HIGH ? "text-red-500" : (riskScore ?? 0) > THRESHOLDS.RISK_SCORE.LOW ? "text-amber-400" : "text-emerald-500"}
             icon={Zap}
             subtext="Neural Confidence"
-            alert={riskScore > THRESHOLDS.RISK_SCORE.HIGH}
+            alert={(riskScore ?? 0) > THRESHOLDS.RISK_SCORE.HIGH}
           />
         </div>
 

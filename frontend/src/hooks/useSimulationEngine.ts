@@ -24,6 +24,7 @@ export function useSimulationEngine({
     flowRate: 5.4,
     tds: 120,
     riskScore: 5,
+    systemState: "NORMAL",
     valveAngle: 90,
     valveState: "OPEN",
     anomalyLevel: 0,
@@ -112,7 +113,12 @@ export function useSimulationEngine({
   // --- Anomaly Injection System ---
 
   const triggerAnomaly = useCallback((type?: string) => {
-    setTelemetry(prev => ({ ...prev, anomalyLevel: 2, alerts: prev.alerts + 1 }));
+    setTelemetry(prev => ({ 
+      ...prev, 
+      anomalyLevel: 2, 
+      systemState: "CRITICAL",
+      alerts: prev.alerts + 1 
+    }));
     
     const anomalyType = type || (Math.random() > 0.5 ? "CONTAMINATION" : "LEAK");
     
@@ -139,7 +145,7 @@ export function useSimulationEngine({
     setTimeout(() => {
       setTelemetry(prev => {
         pushLog("SAFE", "System integrity stabilized. Resuming nominal distribution.");
-        return { ...prev, anomalyLevel: 0, valveAngle: 90 };
+        return { ...prev, anomalyLevel: 0, systemState: "NORMAL", valveAngle: 90 };
       });
     }, 15000);
 

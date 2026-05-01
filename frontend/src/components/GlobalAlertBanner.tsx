@@ -5,11 +5,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle, ShieldAlert } from "lucide-react";
 
 interface GlobalAlertBannerProps {
-  anomalyLevel: number;
+  systemState: string;
 }
 
-export default function GlobalAlertBanner({ anomalyLevel }: GlobalAlertBannerProps) {
-  const isCritical = anomalyLevel >= 2;
+export default function GlobalAlertBanner({ systemState }: GlobalAlertBannerProps) {
+  const isCritical = systemState === "CRITICAL";
 
   return (
     <AnimatePresence>
