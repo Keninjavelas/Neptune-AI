@@ -43,14 +43,14 @@ import NeptuneAIInfrastructureTopology from "./NeptuneAIInfrastructureTopology";
 // --- Sub-components ---
 
 const PremiumCard = ({ children, className = "", alert = false, title = "", icon: Icon }: { children: React.ReactNode, className?: string, alert?: boolean, title?: string, icon?: any }) => (
-  <div className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-3xl p-6 flex flex-col transition-all duration-500 hover:border-slate-700/50 ${alert ? 'border-red-500/50 shadow-[0_0_30px_rgba(239,68,68,0.1)]' : ''} ${className}`}>
+  <div className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-4 flex flex-col transition-all duration-500 hover:border-slate-700/50 ${alert ? 'border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : ''} ${className}`}>
     {title && (
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-xl ${alert ? 'bg-red-500/10 text-red-500' : 'bg-slate-800/80 text-slate-400'}`}>
-            {Icon && <Icon size={18} />}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <div className={`p-1.5 rounded-lg ${alert ? 'bg-red-500/10 text-red-500' : 'bg-slate-800/80 text-slate-400'}`}>
+            {Icon && <Icon size={16} />}
           </div>
-          <h3 className="text-sm font-bold text-slate-300 uppercase tracking-widest">{title}</h3>
+          <h3 className="text-[11px] font-bold text-slate-300 uppercase tracking-widest">{title}</h3>
         </div>
         <div className="flex gap-1">
           <div className={`w-1.5 h-1.5 rounded-full ${alert ? 'bg-red-500 shadow-[0_0_8px_red] animate-pulse' : 'bg-emerald-500/50 shadow-[0_0_8px_emerald]'}`} />
@@ -63,27 +63,27 @@ const PremiumCard = ({ children, className = "", alert = false, title = "", icon
 
 const MetricCard = ({ label, value, unit = "", subtext = "", statusColor = "text-slate-50", icon: Icon, alert = false, pulsing = false }: any) => (
   <motion.div 
-    whileHover={{ y: -2 }}
-    className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-3xl p-5 flex flex-col justify-between transition-all duration-500 hover:bg-slate-900/60 hover:border-slate-700/50 ${alert ? 'border-red-500/40 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : ''}`}
+    whileHover={{ y: -1 }}
+    className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-3 flex flex-col justify-between transition-all duration-500 hover:bg-slate-900/60 hover:border-slate-700/50 ${alert ? 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}
   >
-    <div className="flex items-center justify-between mb-4">
-      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
-      <div className={`p-2 rounded-xl ${alert ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/80 text-slate-500'} border border-slate-700/30`}>
-        <Icon size={18} />
+    <div className="flex items-center justify-between mb-2">
+      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
+      <div className={`p-1.5 rounded-lg ${alert ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/80 text-slate-500'} border border-slate-700/30`}>
+        <Icon size={14} />
       </div>
     </div>
     <div>
       <div className="flex items-baseline gap-1 overflow-hidden">
-        <h2 className={`text-3xl lg:text-4xl font-black tracking-tight truncate ${statusColor}`}>
+        <h2 className={`text-2xl lg:text-3xl font-black tracking-tight truncate ${statusColor}`}>
           {value}
         </h2>
-        {unit && <span className="text-sm font-bold text-slate-600 uppercase tracking-tighter">{unit}</span>}
+        {unit && <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{unit}</span>}
       </div>
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-1.5 mt-1">
         {pulsing && (
-          <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_emerald]" />
+          <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_emerald]" />
         )}
-        <p className="text-[9px] text-slate-600 font-bold uppercase tracking-wider truncate">{subtext}</p>
+        <p className="text-[8px] text-slate-600 font-bold uppercase tracking-wider truncate">{subtext}</p>
       </div>
     </div>
   </motion.div>
@@ -107,22 +107,31 @@ export default function NeptuneAIEnterpriseDashboard() {
     setValveAngle 
   } = useMockTelemetry();
 
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [currentTime, setCurrentTime] = useState<string>("--:--:--");
   const [chartData, setChartData] = useState<any[]>([]);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    setLastUpdated(new Date());
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString());
+    };
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
     const interval = setInterval(() => {
-      setLastUpdated(new Date());
       setChartData(prev => [
         ...prev, 
-        { time: new Date().toLocaleTimeString().slice(3), flow, risk: riskScore }
+        { 
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).slice(3), 
+          flow, 
+          risk: riskScore 
+        }
       ].slice(-30));
     }, 2000);
     return () => clearInterval(interval);
@@ -131,7 +140,7 @@ export default function NeptuneAIEnterpriseDashboard() {
   const isCritical = status === "critical";
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 font-sans antialiased p-4 md:p-6 lg:p-10 selection:bg-cyan-500/30 overflow-x-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-50 font-sans antialiased p-3 md:p-4 lg:p-6 selection:bg-cyan-500/30 overflow-x-hidden">
       
       {/* --- Global Background Layer --- */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -139,48 +148,48 @@ export default function NeptuneAIEnterpriseDashboard() {
         <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[120px]" />
       </div>
 
-      <div className="max-w-[1920px] mx-auto space-y-8 relative z-10">
+      <div className="max-w-[1920px] mx-auto space-y-4 relative z-10">
         
         {/* --- Header Section --- */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-800/40">
-          <div className="flex items-center gap-6">
+        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
+          <div className="flex items-center gap-4">
             <motion.div 
               whileHover={{ scale: 1.05 }}
-              className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-[0_0_30px_rgba(6,182,212,0.3)] border border-white/10"
+              className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.3)] border border-white/10"
             >
-              <Waves className="text-slate-950" size={28} />
+              <Waves className="text-slate-950" size={20} />
             </motion.div>
             <div>
-              <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
+              <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
                 <span className="text-white uppercase">NEPTUNE</span>
                 <span className="text-cyan-400 font-light italic">AI</span>
               </h1>
-              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
-                <div className="w-6 h-[1px] bg-cyan-500/30" />
+              <div className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5 flex items-center gap-2">
+                <div className="w-4 h-[1px] bg-cyan-500/30" />
                 Smart Water Infrastructure Control
               </div>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center gap-4 px-6 py-3 bg-slate-900/40 border border-slate-800/60 rounded-2xl backdrop-blur-xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-4 px-4 py-2 bg-slate-900/40 border border-slate-800/60 rounded-xl backdrop-blur-xl">
               <div className="flex flex-col items-end">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">System Node</span>
-                <span className="text-xs font-bold text-slate-200 font-mono">ESP32-AQ-01</span>
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Node</span>
+                <span className="text-[10px] font-bold text-slate-200 font-mono">ESP32-AQ-01</span>
               </div>
-              <div className="w-[1px] h-8 bg-slate-800" />
+              <div className="w-[1px] h-6 bg-slate-800" />
               <div className="flex flex-col items-end">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Network</span>
-                <div className="text-xs font-bold text-emerald-400 flex items-center gap-2">
-                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_emerald]" />
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Network</span>
+                <div className="text-[10px] font-bold text-emerald-400 flex items-center gap-1.5">
+                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1 h-1 rounded-full bg-emerald-400 shadow-[0_0_6px_emerald]" />
                   ACTIVE
                 </div>
               </div>
-              <div className="w-[1px] h-8 bg-slate-800" />
+              <div className="w-[1px] h-6 bg-slate-800" />
               <div className="flex flex-col items-end">
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Global Clock</span>
-                <span className="text-xs font-bold text-slate-200 font-mono tracking-tighter">
-                  {mounted && lastUpdated ? lastUpdated.toLocaleTimeString() : "--:--:--"}
+                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Global Clock</span>
+                <span className="text-[10px] font-bold text-slate-100 font-mono">
+                  {currentTime}
                 </span>
               </div>
             </div>
@@ -188,7 +197,7 @@ export default function NeptuneAIEnterpriseDashboard() {
         </header>
 
         {/* --- Top Metrics Row --- */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <MetricCard 
             label="System State" 
             value={status === "online" ? "NOMINAL" : "CRITICAL"} 
@@ -240,12 +249,12 @@ export default function NeptuneAIEnterpriseDashboard() {
         </div>
 
         {/* --- Main Operational Grid --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
           
           {/* Left Column: Analytics & Intelligence */}
-          <div className="lg:col-span-3 flex flex-col gap-8">
+          <div className="lg:col-span-3 flex flex-col gap-4">
             <PremiumCard title="Flow Dynamics" icon={BarChart3} className="flex-1">
-              <div className="flex-1 w-full min-h-[220px]">
+              <div className="flex-1 w-full min-h-[140px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                     <defs>
@@ -258,59 +267,59 @@ export default function NeptuneAIEnterpriseDashboard() {
                     <XAxis dataKey="time" hide />
                     <YAxis hide domain={[0, 12]} />
                     <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '10px' }}
+                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', fontSize: '9px' }}
                       itemStyle={{ color: '#06b6d4' }}
                     />
                     <Area 
                       type="monotone" 
                       dataKey="flow" 
                       stroke="#06b6d4" 
-                      strokeWidth={3} 
+                      strokeWidth={2} 
                       fill="url(#cyanGr)" 
                       animationDuration={1000}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              <div className="mt-6 pt-6 border-t border-slate-800/60 grid grid-cols-2 gap-4">
+              <div className="mt-3 pt-3 border-t border-slate-800/60 grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Avg Rate</p>
-                  <p className="text-xl font-black text-slate-100">5.4 <span className="text-[10px] text-slate-600">L/M</span></p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Avg Rate</p>
+                  <p className="text-lg font-black text-slate-100">5.4 <span className="text-[9px] text-slate-600">L/M</span></p>
                 </div>
                 <div>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Stability</p>
-                  <p className="text-xl font-black text-emerald-400">99.4%</p>
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Stability</p>
+                  <p className="text-lg font-black text-emerald-400">99.4%</p>
                 </div>
               </div>
             </PremiumCard>
 
-            <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[400px]">
-              <div className="flex-1 overflow-y-auto space-y-4 pr-2 font-mono scrollbar-hide">
+            <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[300px]">
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 font-mono scrollbar-hide">
                 <AnimatePresence initial={false}>
                   {logs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-3 opacity-30">
-                      <Processor className="animate-spin" size={24} />
-                      <p className="text-[9px] font-bold uppercase tracking-widest">Neural Link...</p>
+                    <div className="flex flex-col items-center justify-center h-full gap-2 opacity-30">
+                      <Processor className="animate-spin" size={20} />
+                      <p className="text-[8px] font-bold uppercase tracking-widest">Neural Link...</p>
                     </div>
                   ) : (
-                    logs.slice(-10).map((log) => (
+                    logs.slice(-12).map((log) => (
                       <motion.div
                         key={log.id}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="group flex flex-col gap-1.5 border-l border-slate-800 pl-3 py-0.5 hover:border-cyan-500/50 transition-colors"
+                        className="group flex flex-col gap-1 border-l border-slate-800 pl-2.5 py-0.5 hover:border-cyan-500/50 transition-colors"
                       >
                         <div className="flex items-center justify-between">
-                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md border ${
+                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${
                             log.source === 'ALERT' ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
                             log.source === 'AI_CORE' ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5' : 
                             'text-slate-500 border-slate-700 bg-slate-800/50'
                           }`}>
                             {log.source}
                           </span>
-                          <span className="text-[9px] text-slate-600 font-bold">{new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}</span>
+                          <span className="text-[8px] text-slate-600 font-bold">{new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}</span>
                         </div>
-                        <p className="text-[11px] text-slate-400 leading-snug group-hover:text-slate-200 transition-colors">
+                        <p className="text-[10px] text-slate-400 leading-tight group-hover:text-slate-200 transition-colors">
                           {log.message}
                         </p>
                       </motion.div>
@@ -335,25 +344,25 @@ export default function NeptuneAIEnterpriseDashboard() {
           </div>
 
           {/* Right Column: Control & Distribution */}
-          <div className="lg:col-span-3 flex flex-col gap-8">
+          <div className="lg:col-span-3 flex flex-col gap-4">
             <PremiumCard title="Control Protocol" icon={Settings} alert={isManual} className="h-auto">
-              <div className="space-y-6">
-                <div className="p-4 bg-slate-950/60 rounded-2xl border border-slate-800/60 text-center">
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Actuator Authority</p>
-                  <p className={`text-xl font-black tracking-tight ${isManual ? 'text-amber-400' : 'text-emerald-400'}`}>
+              <div className="space-y-4">
+                <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/60 text-center">
+                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Actuator Authority</p>
+                  <p className={`text-lg font-black tracking-tight ${isManual ? 'text-amber-400' : 'text-emerald-400'}`}>
                     {isManual ? 'MANUAL_CONTROL' : 'AI_AUTONOMOUS'}
                   </p>
                 </div>
                 
                 <button
                   onClick={() => setIsManual(!isManual)}
-                  className={`w-full py-4 rounded-2xl border font-bold text-sm transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden ${
+                  className={`w-full py-3 rounded-xl border font-bold text-[11px] transition-all duration-300 flex items-center justify-center gap-2 group relative overflow-hidden ${
                     isManual 
-                      ? 'bg-red-600 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)]' 
+                      ? 'bg-red-600 border-red-400 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]' 
                       : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
-                  <AlertTriangle size={18} className={isManual ? 'animate-pulse' : ''} />
+                  <AlertTriangle size={14} className={isManual ? 'animate-pulse' : ''} />
                   {isManual ? "RELEASE CONTROL" : "INITIATE OVERRIDE"}
                 </button>
 
@@ -363,9 +372,9 @@ export default function NeptuneAIEnterpriseDashboard() {
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }}
-                      className="space-y-4 overflow-hidden pt-2"
+                      className="space-y-3 overflow-hidden pt-1"
                     >
-                      <div className="flex justify-between text-[9px] font-bold text-slate-500 uppercase tracking-widest">
+                      <div className="flex justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">
                         <span>Restricted</span>
                         <span className="text-amber-400">{valveAngle}°</span>
                         <span>Full Supply</span>
@@ -373,7 +382,7 @@ export default function NeptuneAIEnterpriseDashboard() {
                       <input 
                         type="range" min="0" max="180" value={valveAngle}
                         onChange={(e) => setValveAngle(parseInt(e.target.value))}
-                        className="w-full h-2 bg-slate-800 rounded-full appearance-none cursor-pointer accent-amber-500 border border-slate-700"
+                        className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-amber-500 border border-slate-700"
                       />
                     </motion.div>
                   )}
@@ -382,7 +391,7 @@ export default function NeptuneAIEnterpriseDashboard() {
             </PremiumCard>
 
             <PremiumCard title="Grid Distribution" icon={Network} className="flex-1">
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {[
                   { id: 'Z-01', name: 'Industrial', load: 84, health: 98, icon: Factory },
                   { id: 'Z-02', name: 'Residential', load: 42, health: 100, icon: Home },
@@ -390,30 +399,30 @@ export default function NeptuneAIEnterpriseDashboard() {
                 ].map((zone) => (
                   <div 
                     key={zone.id} 
-                    className="p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl hover:border-cyan-500/30 transition-all group"
+                    className="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl hover:border-cyan-500/30 transition-all group"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-900 rounded-lg text-slate-500 group-hover:text-cyan-400 transition-colors">
-                          <zone.icon size={16} />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="p-1.5 bg-slate-900 rounded-lg text-slate-500 group-hover:text-cyan-400 transition-colors">
+                          <zone.icon size={14} />
                         </div>
                         <div>
-                          <p className="text-xs font-bold text-slate-200 uppercase tracking-wide">{zone.name}</p>
-                          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest font-mono">{zone.id}</p>
+                          <p className="text-[10px] font-bold text-slate-200 uppercase tracking-wide">{zone.name}</p>
+                          <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest font-mono">{zone.id}</p>
                         </div>
                       </div>
-                      <div className={`text-[9px] font-bold px-2 py-0.5 rounded-md border ${zone.health > 95 ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' : 'text-amber-400 border-amber-400/20 bg-amber-400/5'}`}>
+                      <div className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${zone.health > 95 ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' : 'text-amber-400 border-amber-400/20 bg-amber-400/5'}`}>
                         {zone.health}%
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-[7px] font-bold text-slate-500 uppercase tracking-widest">
                         <span>Load Demand</span>
                         <span className="text-cyan-400">{zone.load}%</span>
                       </div>
-                      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50">
+                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50">
                         <motion.div 
-                          className="h-full bg-cyan-500 shadow-[0_0_10px_rgba(6,182,212,0.3)]" 
+                          className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.3)]" 
                           initial={{ width: 0 }} 
                           animate={{ width: `${zone.load}%` }} 
                         />
@@ -421,6 +430,25 @@ export default function NeptuneAIEnterpriseDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </PremiumCard>
+
+            <PremiumCard title="System Integrity" icon={ShieldAlert} className="h-auto">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Activity size={14} className="text-cyan-400" />
+                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Heartbeat</span>
+                  </div>
+                  <span className="text-[9px] font-mono text-emerald-400">NOMINAL</span>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Database size={14} className="text-purple-400" />
+                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Synapse</span>
+                  </div>
+                  <span className="text-[9px] font-mono text-emerald-400">SYNCED</span>
+                </div>
               </div>
             </PremiumCard>
           </div>
