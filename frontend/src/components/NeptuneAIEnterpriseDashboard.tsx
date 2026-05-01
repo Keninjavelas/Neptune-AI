@@ -37,8 +37,10 @@ import {
   Home
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import useMockTelemetry from "../hooks/useMockTelemetry";
+import { useTelemetry } from "@/context/TelemetryContext";
 import NeptuneAIInfrastructureTopology from "./NeptuneAIInfrastructureTopology";
+import { THRESHOLDS } from "@/lib/constants/thresholds";
+import GlobalAlertBanner from "./GlobalAlertBanner";
 
 // --- Sub-components ---
 
@@ -62,33 +64,39 @@ const PremiumCard = memo(({ children, className = "", alert = false, title = "",
 ));
 PremiumCard.displayName = "PremiumCard";
 
-const MetricCard = memo(({ label, value, unit = "", subtext = "", statusColor = "text-slate-50", icon: Icon, alert = false, pulsing = false }: any) => (
-  <motion.div 
-    whileHover={{ y: -1 }}
-    className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-3 flex flex-col justify-between transition-all duration-500 hover:bg-slate-900/60 hover:border-slate-700/50 ${alert ? 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}
-  >
-    <div className="flex items-center justify-between mb-2">
-      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
-      <div className={`p-1.5 rounded-lg ${alert ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/80 text-slate-500'} border border-slate-700/30`}>
-        <Icon size="14" />
+const MetricCard = memo(({ label, value, unit = "", subtext = "", statusColor = "text-slate-50", icon: Icon, alert = false, pulsing = false }: any) => {
+  if (!Icon) {
+    console.warn(`MetricCard: Icon is undefined for ${label}`);
+    return null;
+  }
+  return (
+    <motion.div 
+      whileHover={{ y: -1 }}
+      className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-3 flex flex-col justify-between transition-all duration-500 hover:bg-slate-900/60 hover:border-slate-700/50 ${alert ? 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
+        <div className={`p-1.5 rounded-lg ${alert ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/80 text-slate-500'} border border-slate-700/30`}>
+          <Icon size="14" />
+        </div>
       </div>
-    </div>
-    <div>
-      <div className="flex items-baseline gap-1 overflow-hidden">
-        <h2 className={`text-2xl lg:text-3xl font-black tracking-tight truncate ${statusColor}`}>
-          {value}
-        </h2>
-        {unit && <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{unit}</span>}
+      <div>
+        <div className="flex items-baseline gap-1 overflow-hidden">
+          <h2 className={`text-2xl lg:text-3xl font-black tracking-tight truncate ${statusColor}`}>
+            {value}
+          </h2>
+          {unit && <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{unit}</span>}
+        </div>
+        <div className="flex items-center gap-1.5 mt-1">
+          {pulsing && (
+            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_emerald]" />
+          )}
+          <p className="text-[8px] text-slate-600 font-bold uppercase tracking-wider truncate">{subtext}</p>
+        </div>
       </div>
-      <div className="flex items-center gap-1.5 mt-1">
-        {pulsing && (
-          <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_emerald]" />
-        )}
-        <p className="text-[8px] text-slate-600 font-bold uppercase tracking-wider truncate">{subtext}</p>
-      </div>
-    </div>
-  </motion.div>
-));
+    </motion.div>
+  );
+});
 MetricCard.displayName = "MetricCard";
 
 const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
@@ -134,55 +142,87 @@ const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
 ));
 FlowDynamics.displayName = "FlowDynamics";
 
-const OperationsStream = memo(({ logs }: any) => (
-  <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[300px]">
-    <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 font-mono scrollbar-hide">
-      <AnimatePresence initial={false}>
-        {logs.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full gap-2 opacity-30">
-            <Processor className="animate-spin" size={20} />
-            <p className="text-[8px] font-bold uppercase tracking-widest">Neural Link...</p>
-          </div>
-        ) : (
-          logs.slice(-12).map((log: any) => (
-            <motion.div
-              key={log.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="group flex flex-col gap-1 border-l border-slate-800 pl-2.5 py-0.5 hover:border-cyan-500/50 transition-colors"
-            >
-              <div className="flex items-center justify-between">
-                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${
-                  log.source === 'ALERT' ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
-                  log.source === 'AI' ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5' : 
-                  log.source === 'WARN' ? 'text-amber-500 border-amber-500/20 bg-amber-500/5' :
-                  log.source === 'CTRL' ? 'text-purple-400 border-purple-400/20 bg-purple-400/5' :
-                  log.source === 'SAFE' ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' :
-                  'text-slate-500 border-slate-700 bg-slate-800/50'
-                }`}>
-                  {log.source}
-                </span>
-                <span className="text-[8px] text-slate-600 font-bold">{new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}</span>
-              </div>
-              <p className="text-[10px] text-slate-400 leading-tight group-hover:text-slate-200 transition-colors">
-                {log.message}
-              </p>
-            </motion.div>
-          ))
-        )}
-      </AnimatePresence>
-    </div>
-  </PremiumCard>
-));
+const OperationsStream = memo(({ logs }: any) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [logs]);
+
+  const parseLogMessage = (message: string) => {
+    const nodeMatch = message.match(/^\[(.*?)\] (.*)$/);
+    if (nodeMatch) {
+      return {
+        nodeId: nodeMatch[1],
+        content: nodeMatch[2]
+      };
+    }
+    return { nodeId: null, content: message };
+  };
+
+  return (
+    <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[300px]">
+      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 font-mono scrollbar-hide">
+        <AnimatePresence initial={false}>
+          {logs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full gap-2 opacity-30">
+              <Processor className="animate-spin" size={20} />
+              <p className="text-[8px] font-bold uppercase tracking-widest">Neural Link...</p>
+            </div>
+          ) : (
+            logs.map((log: any) => {
+              const { nodeId, content } = parseLogMessage(log.message);
+              return (
+                <motion.div
+                  key={log.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="group flex flex-col gap-1 border-l border-slate-800 pl-2.5 py-0.5 hover:border-cyan-500/50 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${
+                        log.source === 'ALERT' ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
+                        log.source === 'AI' ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5' : 
+                        log.source === 'WARN' ? 'text-amber-500 border-amber-500/20 bg-amber-500/5' :
+                        log.source === 'CTRL' ? 'text-purple-400 border-purple-400/20 bg-purple-400/5' :
+                        log.source === 'SAFE' ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' :
+                        'text-slate-500 border-slate-700 bg-slate-800/50'
+                      }`}>
+                        {log.source}
+                      </span>
+                      {nodeId && (
+                        <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-cyan-500/80 uppercase tracking-tighter">
+                          {nodeId}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[8px] text-slate-600 font-bold">{new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 leading-tight group-hover:text-slate-200 transition-colors">
+                    {content}
+                  </p>
+                </motion.div>
+              );
+            })
+          )}
+        </AnimatePresence>
+        <div ref={scrollRef} />
+      </div>
+    </PremiumCard>
+  );
+});
 OperationsStream.displayName = "OperationsStream";
 
-const GridDistribution = memo(({ Factory, Home, Waves }: any) => (
+const GridDistribution = memo(({ FactoryIcon, HomeIcon, WavesIcon }: any) => (
   <PremiumCard title="Grid Distribution" icon={Network} className="flex-1">
     <div className="space-y-3">
       {[
-        { id: 'Z-01', name: 'Industrial', load: 84, health: 98, icon: Factory },
-        { id: 'Z-02', name: 'Residential', load: 42, health: 100, icon: Home },
-        { id: 'Z-03', name: 'Agri-Tech', load: 12, health: 92, icon: Waves },
+        { id: 'Z-01', name: 'Industrial', load: 84, health: 98, icon: FactoryIcon },
+        { id: 'Z-02', name: 'Residential', load: 42, health: 100, icon: HomeIcon },
+        { id: 'Z-03', name: 'Agri-Tech', load: 12, health: 92, icon: WavesIcon },
       ].map((zone) => (
         <div 
           key={zone.id} 
@@ -191,7 +231,7 @@ const GridDistribution = memo(({ Factory, Home, Waves }: any) => (
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2.5">
               <div className="p-1.5 bg-slate-900 rounded-lg text-slate-500 group-hover:text-cyan-400 transition-colors">
-                <zone.icon size={14} />
+                {zone.icon && <zone.icon size={14} />}
               </div>
               <div>
                 <p className="text-[10px] font-bold text-slate-200 uppercase tracking-wide">{zone.name}</p>
@@ -222,19 +262,19 @@ const GridDistribution = memo(({ Factory, Home, Waves }: any) => (
 ));
 GridDistribution.displayName = "GridDistribution";
 
-const SystemIntegrity = memo(({ ShieldAlert, Activity, Database }: any) => (
+const SystemIntegrity = memo(({ ShieldAlertIcon, ActivityIcon, DatabaseIcon }: any) => (
   <PremiumCard title="System Integrity" icon={ShieldAlert} className="h-auto">
     <div className="space-y-3">
       <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
         <div className="flex items-center gap-2">
-          <Activity size={14} className="text-cyan-400" />
+          {ActivityIcon && <ActivityIcon size={14} className="text-cyan-400" />}
           <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Heartbeat</span>
         </div>
         <span className="text-[9px] font-mono text-emerald-400">NOMINAL</span>
       </div>
       <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
         <div className="flex items-center gap-2">
-          <Database size={14} className="text-purple-400" />
+          {DatabaseIcon && <DatabaseIcon size={14} className="text-purple-400" />}
           <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Synapse</span>
         </div>
         <span className="text-[9px] font-mono text-emerald-400">SYNCED</span>
@@ -295,6 +335,7 @@ const ControlProtocol = memo(({ isManual, valveAngle, setIsManual, setValveAngle
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
               className="space-y-3 overflow-hidden pt-1"
             >
               <div className="flex justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">
@@ -319,21 +360,27 @@ ControlProtocol.displayName = "ControlProtocol";
 // --- Main Dashboard ---
 
 export default function NeptuneAIEnterpriseDashboard() {
-  const { 
-    flow, 
+  const {
+    telemetry,
+    logs,
+    setIsManual,
+    setValveAngle
+  } = useTelemetry();
+
+  const {
+    flowRate: flow,
     tankLevel,
-    tdsValue,
-    valveAngle, 
-    alerts, 
-    status, 
-    logs, 
+    tds: tdsValue,
+    valveAngle,
+    status,
     isManual,
-    wqi,
     riskScore,
     stabilityScore,
-    setIsManual,
-    setValveAngle 
-  } = useMockTelemetry();
+    alerts,
+    anomalyLevel
+  } = telemetry;
+
+  const wqi = 100 - (riskScore * 0.5); // Derived WQI
 
   const [currentTime, setCurrentTime] = useState<string>("--:--:--");
   const [chartData, setChartData] = useState<any[]>([]);
@@ -354,46 +401,53 @@ export default function NeptuneAIEnterpriseDashboard() {
     if (!mounted) return;
     const interval = setInterval(() => {
       setChartData(prev => [
-        ...prev, 
-        { 
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).slice(3), 
-          flow, 
-          risk: riskScore 
+        ...prev,
+        {
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).slice(3),
+          flow,
+          risk: riskScore
         }
       ].slice(-30));
     }, 2000);
     return () => clearInterval(interval);
   }, [flow, mounted, riskScore]);
 
-  const isCritical = status === "critical";
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 font-sans antialiased p-3 md:p-4 lg:p-6 selection:bg-cyan-500/30 overflow-x-hidden">
-      
+    <div className={`min-h-screen bg-slate-950 text-slate-50 font-sans antialiased p-3 md:p-4 lg:p-6 selection:bg-cyan-500/30 overflow-x-hidden transition-colors duration-1000 ${
+      anomalyLevel === 2 ? 'shadow-[inset_0_0_100px_rgba(239,68,68,0.15)] bg-slate-950' : 
+      anomalyLevel === 1 ? 'shadow-[inset_0_0_100px_rgba(245,158,11,0.1)]' : ''
+    }`}>
+
+      <GlobalAlertBanner anomalyLevel={anomalyLevel} />
+
       {/* --- Global Background Layer --- */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] left-[-5%] w-[50%] h-[50%] bg-cyan-500/5 rounded-full blur-[120px] animate-pulse" />
+        <div className={`absolute top-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full blur-[120px] animate-pulse transition-colors duration-1000 ${
+          anomalyLevel === 2 ? 'bg-red-500/10' : 'bg-cyan-500/5'
+        }`} />
         <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[120px]" />
       </div>
 
       <div className="max-w-[1920px] mx-auto space-y-4 relative z-10">
-        
+
         {/* --- Header Section --- */}
         <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
           <div className="flex items-center gap-4">
-            <motion.div 
+            <motion.div
               whileHover={{ scale: 1.05 }}
-              className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(6,182,212,0.3)] border border-white/10"
+              className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-white/10 transition-all duration-500 ${
+                anomalyLevel === 2 ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-500/30' : 'bg-gradient-to-br from-cyan-400 to-blue-600 shadow-cyan-500/30'
+              }`}
             >
               <Waves className="text-slate-950" size={20} />
             </motion.div>
             <div>
               <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
                 <span className="text-white uppercase">NEPTUNE</span>
-                <span className="text-cyan-400 font-light italic">AI</span>
+                <span className={`font-light italic transition-colors duration-500 ${anomalyLevel === 2 ? 'text-red-400' : 'text-cyan-400'}`}>AI</span>
               </h1>
               <div className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5 flex items-center gap-2">
-                <div className="w-4 h-[1px] bg-cyan-500/30" />
+                <div className={`w-4 h-[1px] transition-colors duration-500 ${anomalyLevel === 2 ? 'bg-red-500/30' : 'bg-cyan-500/30'}`} />
                 Smart Water Infrastructure Control
               </div>
             </div>
@@ -408,9 +462,13 @@ export default function NeptuneAIEnterpriseDashboard() {
               <div className="w-[1px] h-6 bg-slate-800" />
               <div className="flex flex-col items-end">
                 <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Network</span>
-                <div className="text-[10px] font-bold text-emerald-400 flex items-center gap-1.5">
-                  <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1 h-1 rounded-full bg-emerald-400 shadow-[0_0_6px_emerald]" />
-                  ACTIVE
+                <div className={`text-[10px] font-bold flex items-center gap-1.5 transition-colors duration-500 ${anomalyLevel === 2 ? 'text-red-400' : 'text-emerald-400'}`}>
+                  <motion.div
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className={`w-1 h-1 rounded-full shadow-lg ${anomalyLevel === 2 ? 'bg-red-400 shadow-red-400/50' : 'bg-emerald-400 shadow-emerald-400/50'}`}
+                  />
+                  {anomalyLevel === 2 ? 'CONGESTED' : 'ACTIVE'}
                 </div>
               </div>
               <div className="w-[1px] h-6 bg-slate-800" />
@@ -426,53 +484,58 @@ export default function NeptuneAIEnterpriseDashboard() {
 
         {/* --- Top Metrics Row --- */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <MetricCard 
-            label="System State" 
-            value={status === "online" ? "NOMINAL" : "CRITICAL"} 
-            statusColor={status === "online" ? "text-emerald-400" : "text-red-500"} 
-            icon={ShieldCheck} 
-            pulsing={status === "online"}
-            subtext="Integrity Secure"
+          <MetricCard
+            label="System State"
+            value={anomalyLevel === 0 ? "NOMINAL" : anomalyLevel === 1 ? "WARNING" : "CRITICAL"}
+            statusColor={anomalyLevel === 0 ? "text-emerald-400" : anomalyLevel === 1 ? "text-amber-400" : "text-red-500"}
+            icon={ShieldCheck}
+            pulsing={anomalyLevel === 0}
+            subtext={anomalyLevel === 0 ? "Integrity Secure" : "Anomaly Detected"}
+            alert={anomalyLevel > 0}
           />
-          <MetricCard 
-            label="Current Flow" 
-            value={flow?.toFixed(1) ?? "0.0"} 
-            unit="L/M" 
-            statusColor="text-cyan-400" 
-            icon={Droplet} 
+          <MetricCard
+            label="Current Flow"
+            value={flow?.toFixed(1) ?? "0.0"}
+            unit={THRESHOLDS.FLOW_RATE.UNIT}
+            statusColor={flow > THRESHOLDS.FLOW_RATE.MAX_SAFE || flow < THRESHOLDS.FLOW_RATE.MIN_SAFE ? "text-red-400" : "text-cyan-400"}
+            icon={Droplet}
             subtext="Live Throughput"
+            alert={flow > THRESHOLDS.FLOW_RATE.MAX_SAFE || flow < THRESHOLDS.FLOW_RATE.MIN_SAFE}
           />
-          <MetricCard 
-            label="Quality Index" 
-            value={wqi ?? 0} 
-            unit="WQI" 
-            statusColor={wqi > 90 ? "text-emerald-400" : "text-amber-400"} 
-            icon={Beaker} 
+          <MetricCard
+            label="Quality Index"
+            value={wqi?.toFixed(0) ?? 0}
+            unit="WQI"
+            statusColor={wqi > 90 ? "text-emerald-400" : wqi > 70 ? "text-amber-400" : "text-red-400"}
+            icon={Beaker}
             subtext="TDS Sensor Feedback"
+            alert={wqi < 70}
           />
-          <MetricCard 
-            label="Tank Capacity" 
-            value={tankLevel?.toFixed(0) ?? "0"} 
-            unit="%" 
-            statusColor="text-blue-500" 
-            icon={Waves} 
+          <MetricCard
+            label="Tank Capacity"
+            value={tankLevel?.toFixed(0) ?? "0"}
+            unit={THRESHOLDS.TANK_LEVEL.UNIT}
+            statusColor={tankLevel < THRESHOLDS.TANK_LEVEL.LOW ? "text-red-400" : "text-blue-500"}
+            icon={Waves}
             subtext="Reservoir Level"
+            alert={tankLevel < THRESHOLDS.TANK_LEVEL.LOW}
           />
-          <MetricCard 
-            label="Active Alerts" 
-            value={alerts ?? 0} 
-            statusColor={alerts > 0 ? "text-red-500" : "text-slate-500"} 
-            icon={ShieldAlert} 
+          <MetricCard
+            label="Active Alerts"
+            value={alerts ?? 0}
+            statusColor={alerts > 0 ? "text-red-500" : "text-slate-500"}
+            icon={ShieldAlert}
             alert={alerts > 0}
-            subtext={alerts > 0 ? "Action Required" : "Zero threats"}
+            subtext={alerts > 0 ? `${alerts} Unresolved` : "Zero threats"}
           />
-          <MetricCard 
-            label="AI Risk Score" 
-            value={riskScore ?? 0} 
-            unit="%" 
-            statusColor={riskScore > 30 ? "text-red-500" : "text-emerald-500"} 
-            icon={Zap} 
+          <MetricCard
+            label="AI Risk Score"
+            value={riskScore ?? 0}
+            unit={THRESHOLDS.RISK_SCORE.UNIT}
+            statusColor={riskScore > THRESHOLDS.RISK_SCORE.HIGH ? "text-red-500" : riskScore > THRESHOLDS.RISK_SCORE.LOW ? "text-amber-400" : "text-emerald-500"}
+            icon={Zap}
             subtext="Neural Confidence"
+            alert={riskScore > THRESHOLDS.RISK_SCORE.HIGH}
           />
         </div>
 
@@ -506,8 +569,8 @@ export default function NeptuneAIEnterpriseDashboard() {
               setIsManual={setIsManual} 
               setValveAngle={setValveAngle} 
             />
-            <GridDistribution Factory={Factory} Home={Home} Waves={Waves} />
-            <SystemIntegrity ShieldAlert={ShieldAlert} Activity={Activity} Database={Database} />
+            <GridDistribution FactoryIcon={Factory} HomeIcon={Home} WavesIcon={Waves} />
+            <SystemIntegrity ShieldAlertIcon={ShieldAlert} ActivityIcon={Activity} DatabaseIcon={Database} />
           </div>
 
         </div>

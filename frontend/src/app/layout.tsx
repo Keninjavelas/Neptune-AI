@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { TelemetryProvider } from "@/context/TelemetryContext";
 
 export const metadata: Metadata = {
   title: 'AquaFlow AI',
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-white">
         <main className="min-h-screen">
-          {children}
+          <TelemetryProvider>
+            {children}
+          </TelemetryProvider>
         </main>
       </body>
     </html>
