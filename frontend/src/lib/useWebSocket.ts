@@ -1,22 +1,26 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { attachRealtimeSync, subscribeToChannel } from '@/lib/ws';
-import { useStore, type WsStatus } from '@/store/useStore';
+/**
+ * Simplified WebSocket hook (legacy - not used in MVP)
+ * Kept for backward compatibility
+ */
 
-type ChannelCallback = (data: unknown) => void;
+import { useCallback, useState } from 'react';
 
-const currentStatus = useStore.getState().wsStatus;
+export interface WsStatus {
+  isConnected: boolean;
+  error: string | null;
+}
 
 export function useWebSocket() {
-  const [status, setLocalStatus] = useState<WsStatus>(currentStatus);
+  const [status] = useState<WsStatus>({
+    isConnected: false,
+    error: null,
+  });
 
-  useEffect(() => {
-    return attachRealtimeSync(setLocalStatus);
-  }, []);
-
-  const subscribe = useCallback((channel: string, callback: ChannelCallback) => {
-    return subscribeToChannel(channel, callback);
+  const subscribe = useCallback((channel: string, callback: (data: unknown) => void) => {
+    console.log('Subscribe (not implemented in MVP):', channel);
+    return () => {};
   }, []);
 
   return { subscribe, status };
