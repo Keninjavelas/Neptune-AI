@@ -3,45 +3,48 @@
 const http = require('http');
 const createApp = require('../app');
 const { createWsServer } = require('./wsServer');
-const { createRedisBus } = require('../lib/redisBus');
-const { createDigitalTwinService } = require('./digitalTwinService');
-const { query } = require('./db');
+const { initMqttClient } = require('./mqttClient');
+const { initDb, query } = require('./db');
 
-async function startApiService(env, logger) {
-  const redisBus = createRedisBus(env.REDIS_URL, logger);
-  const digitalTwinService = createDigitalTwinService(redisBus, logger, {
-    timestepMs: env.SIM_INTERVAL_MS,
-  });
-  const app = createApp({ digitalTwinService });
+async function startApiService(env) {
+  // Initialize database
+  await initDb(env.DATABASE_URL);
+
+  // Create Express app
+  const app = createApp();
   const server = http.createServer(app);
+
+  // Create WebSocket server for real-time updates
   const wsServer = createWsServer(server);
 
-  await redisBus.subscribe('poseidon:processed', (event) => {
-    if (!event?.channel || event.data === undefined) return;
-    wsServer.broadcast(event.channel, event.data);
+  // Initialize MQTT client to receive telemetry from ESP32
+  const mqttClient = initMqttClient(env.MQTT_BROKER_URL);
+
+  // When MQTT publishes telemetry, broadcast to WebSocket clients
+  mqttClient.on('message', (topic, message) => {
+    try {
+      const data = JSON.parse(message.toString());
+      wsServer.broadcast('telemetry', { topic, data, timestamp: Date.now() });
+    } catch (e) {
+      console.error('Failed to parse MQTT message:', e.message);
+    }
   });
 
-  await redisBus.subscribe('poseidon:alerts', (event) => {
-    if (!event?.channel || event.data === undefined) return;
-    wsServer.broadcast(event.channel, event.data);
-  });
-
-  digitalTwinService.start();
-
-  server.listen(env.PORT, () => {
-    logger.info({ port: env.PORT }, 'API service listening');
+  const port = env.PORT || 3000;
+  server.listen(port, () => {
+    console.log(`[INFO] AquaFlow AI server listening on port ${port}`);
   });
 
   async function shutdown() {
-    digitalTwinService.stop();
-    await redisBus.close();
+    console.log('[INFO] Shutting down...');
+    mqttClient.end();
     await new Promise((resolve) => server.close(resolve));
   }
 
   process.once('SIGINT', () => shutdown().finally(() => process.exit(0)));
   process.once('SIGTERM', () => shutdown().finally(() => process.exit(0)));
 
-  return { server, wsServer, redisBus, digitalTwinService, query, shutdown };
+  return { server, wsServer, mqttClient, query, shutdown };
 }
 
 module.exports = { startApiService };

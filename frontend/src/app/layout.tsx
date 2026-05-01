@@ -1,23 +1,20 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import 'leaflet/dist/leaflet.css';
-import { AlertBadgeProvider } from '@/components/layout/AlertBadgeProvider';
-import { ErrorBoundary } from '@/components/layout/ErrorBoundary';
 
 export const metadata: Metadata = {
-  title: 'Poseidon Smart Water Hub',
-  description: 'Real-time water infrastructure monitoring',
+  title: 'AquaFlow AI',
+  description: 'AI-powered smart water leak detection and automatic response system',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="flex min-h-screen bg-gray-50">
-        <AlertBadgeProvider />
-        <main className="flex-1 p-6 overflow-auto">
-          <ErrorBoundary>{children}</ErrorBoundary>
+      <body className="bg-white">
+        <main className="min-h-screen">
+          {children}
         </main>
       </body>
     </html>
   );
 }
+

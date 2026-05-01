@@ -2,12 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-.leaflet-container {
-	height: 100%;
-	width: 100%;
+/* AquaFlow AI Custom Styles */
+
+* {
+  @apply box-border;
 }
 
-.leaflet-popup-content {
+body {
+  @apply bg-white text-slate-900;
+}
+
+html {
+  @apply scroll-smooth;
+}
+
 	margin: 10px 12px;
 	font-size: 0.875rem;
 }

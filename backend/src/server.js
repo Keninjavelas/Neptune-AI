@@ -1,14 +1,13 @@
 'use strict';
 
-const { logger } = require('./lib/logger');
 const { getEnv } = require('./config/env');
 
-const REQUIRED_ENV_VARS = ['DATABASE_URL', 'MQTT_BROKER_URL', 'WS_PORT', 'CORS_ORIGIN'];
+const REQUIRED_ENV_VARS = ['DATABASE_URL', 'MQTT_BROKER_URL'];
 
 function validateEnv(env = process.env) {
   const missing = REQUIRED_ENV_VARS.filter((name) => !env[name]);
   for (const name of missing) {
-    console.error(`[FATAL] Missing required environment variable: ${name}. Exiting.`);
+    console.error(`[FATAL] Missing required environment variable: ${name}`);
   }
   if (missing.length > 0) {
     process.exit(1);
@@ -20,12 +19,15 @@ function startServer() {
   const env = getEnv();
   const { startApiService } = require('./services/apiService');
 
-  return startApiService(env, logger);
+  return startApiService(env);
 }
 
-// Only start the server when this file is run directly
+// Only start when run directly
 if (require.main === module) {
-  startServer();
+  startServer().catch((error) => {
+    console.error('[FATAL] Failed to start server:', error);
+    process.exit(1);
+  });
 }
 
 module.exports = { validateEnv, startServer };
