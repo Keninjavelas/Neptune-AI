@@ -328,7 +328,7 @@ aquaflow-ai/
 
 ---
 
-## 🎬 Demo Flow (Live Hackathon)
+## 🌊 Flow 
 
 ### Step 1: System Startup ⏱️ 2 minutes
 ```bash
@@ -434,7 +434,7 @@ SELECT * FROM anomaly_alerts ORDER BY timestamp DESC LIMIT 10;
 - **Mohammad Ayaan Pasha**
 - **Aryan Kapoor** 
 - **Mohammed Shuraim Khan** 
-- **Maajid ** 
+- **Mohammed S Maajid** 
 
 ---
 
@@ -472,4 +472,4 @@ MIT License – Free to use and modify
 
 ---
 
-Made with ❤️ for the AquaFlow AI Hackathon 🌊
+Made with ❤️ for Neptune AI 🌊
