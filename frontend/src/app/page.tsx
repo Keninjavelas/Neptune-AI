@@ -1,12 +1,12 @@
-﻿'use client';
+'use client';
 
 import React from 'react';
-import NeptuneAIDashboard from '@/components/NeptuneAIDashboard';
+import NeptuneAICommandCenter from '@/components/NeptuneAICommandCenter';
 
 /**
- * Main Page - Neptune AI Dashboard
- * Renders the production-ready dark-mode water leak detection dashboard
+ * Main Page - Neptune AI Command Center
+ * Renders the live high-tech command center for water monitoring
  */
 export default function Page() {
-  return <NeptuneAIDashboard />;
+  return <NeptuneAICommandCenter />;
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 export type TelemetryLog = {
   id: string;
@@ -8,6 +8,10 @@ export type TelemetryLog = {
   message: string;
 };
 
+/**
+ * Custom hook to simulate real-time IoT telemetry from an ESP32.
+ * Fluctuates flow rate, triggers anomalies, and manages a live log feed.
+ */
 export default function useMockTelemetry(initialFlow = 4.2) {
   const [flow, setFlow] = useState<number>(initialFlow);
   const [valveAngle, setValveAngle] = useState<number>(90);
@@ -18,76 +22,66 @@ export default function useMockTelemetry(initialFlow = 4.2) {
 
   useEffect(() => {
     mounted.current = true;
-    return () => {
-      mounted.current = false;
-    };
+    return () => { mounted.current = false; };
   }, []);
 
-  // helper to push log
-  const pushLog = (source: TelemetryLog['source'], message: string) => {
+  const pushLog = useCallback((source: TelemetryLog["source"], message: string) => {
     const entry: TelemetryLog = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       ts: Date.now(),
       source,
       message,
     };
-    setLogs((s) => {
-      const next = [...s, entry].slice(-200);
-      return next;
-    });
-  };
+    setLogs((s) => [...s, entry].slice(-100));
+  }, []);
 
   useEffect(() => {
-    // initial warmup logs
-    pushLog("SYS", "Telemetry bridge initialized (ESP32 simulated)");
-    pushLog("AI_CORE", "AI inference module online — monitoring baseline");
+    // Startup sequence
+    pushLog("SYS", "Neptune AI Command Center v2.5.0 initializing...");
+    pushLog("SYS", "ESP32 Uplink established via WebSocket (Secure)");
+    pushLog("AI_CORE", "Neural monitoring core engaged — processing baseline flow");
 
-    const iv = setInterval(() => {
-      // small sinusoidal + noise variation
-      const noise = (Math.random() - 0.5) * 0.25;
-      const delta = Math.sin(Date.now() / 2000) * 0.15 + noise;
-      let nextFlow = Math.max(0.2, +(flow + delta).toFixed(3));
+    const interval = setInterval(() => {
+      if (!mounted.current) return;
 
-      // occasional anomaly
+      // 1. Randomly fluctuate flow rate every 2 seconds
+      const noise = (Math.random() - 0.5) * 0.4;
+      const drift = (4.2 - flow) * 0.1;
+      let nextFlow = +(flow + noise + drift).toFixed(2);
+      if (nextFlow < 0) nextFlow = 0;
+      setFlow(nextFlow);
+
+      // 2. Occasionally trigger an anomaly (8% chance)
       if (Math.random() < 0.08) {
-        // anomaly burst
-        const drop = +(Math.random() * 2 + 1).toFixed(2);
-        nextFlow = Math.max(0.05, +(nextFlow - drop).toFixed(3));
-        pushLog("ALERT", `Rapid flow drop detected: ${nextFlow.toFixed(2)} L/min`);
-        pushLog("AI_CORE", `Anomaly classifier: probable leak (p=${Math.round(Math.random()*30+70)}%)`);
-        setAlerts((a) => Math.min(99, a + 1));
-        setValveAngle((v) => Math.max(10, v - Math.round(Math.random() * 50)));
-        setStatus("online");
-      } else {
-        // gentle drift back towards baseline 4.2
-        nextFlow = +(nextFlow + (4.2 - nextFlow) * 0.02).toFixed(3);
+        const drop = +(Math.random() * 2 + 0.5).toFixed(2);
+        const anomalyFlow = Math.max(0.1, +(nextFlow - drop).toFixed(2));
+        setFlow(anomalyFlow);
+        setAlerts((a) => a + 1);
+        
+        pushLog("ALERT", `Critical flow variance: ${anomalyFlow} L/min detected`);
+        pushLog("AI_CORE", `Anomaly classifier: Probable leak signature identified.`);
+        
+        // 3. Update valve angle automatically on anomaly
+        const mitigationAngle = Math.max(15, Math.floor(Math.random() * 45));
+        setValveAngle(mitigationAngle);
+        pushLog("AI_CORE", `Proactive mitigation: Valve angle restricted to ${mitigationAngle}°`);
       }
 
-      // occasionally flip offline/online
-      if (Math.random() < 0.01) {
-        setStatus((s) => {
-          const ns = s === "online" ? "offline" : "online";
-          pushLog("SYS", `Connection ${ns.toUpperCase()}`);
-          return ns;
-        });
-      }
-
-      // small valve auto adjustments when not manual
+      // 4. Small random valve drift (simulation of physical vibration/micro-adjustments)
       setValveAngle((v) => {
-        const adj = (Math.random() - 0.5) * 2; // -1..1
-        return Math.min(180, Math.max(0, Math.round(v + adj)));
+        const adj = Math.floor((Math.random() - 0.5) * 2);
+        return Math.min(180, Math.max(0, v + adj));
       });
 
-      if (mounted.current) setFlow(nextFlow);
     }, 2000);
 
-    return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flow]);
+    return () => clearInterval(interval);
+  }, [flow, pushLog]);
 
-  // public API
-  const clearAlerts = () => setAlerts(0);
-  const pushManualLog = (msg: string) => pushLog("SYS", msg);
+  const clearAlerts = () => {
+    setAlerts(0);
+    pushLog("SYS", "Alert buffer cleared by operator");
+  };
 
   return {
     flow,
@@ -95,8 +89,9 @@ export default function useMockTelemetry(initialFlow = 4.2) {
     alerts,
     status,
     logs,
-    pushLog: pushManualLog,
-    clearAlerts,
+    pushLog,
     setValveAngle,
-  } as const;
+    setStatus,
+    clearAlerts
+  };
 }

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "aquaflow-ai": "file:..",
+    "framer-motion": "^12.38.0",
     "lucide-react": "^0.395.0",
     "next": "14.2.3",
     "react": "^18.3.1",
