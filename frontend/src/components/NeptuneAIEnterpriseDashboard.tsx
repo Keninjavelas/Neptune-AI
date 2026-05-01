@@ -372,7 +372,7 @@ export default function NeptuneAIEnterpriseDashboard() {
     tankLevel,
     tds: tdsValue,
     valveAngle,
-    status,
+    telemetryStatus: status,
     isManual,
     riskScore,
     stabilityScore,

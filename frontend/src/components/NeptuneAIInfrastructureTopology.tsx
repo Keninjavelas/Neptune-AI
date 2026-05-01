@@ -4,7 +4,7 @@ import React, { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Waves, Activity, Settings, Zap, FlaskConical, Building, 
-  Home, Factory, WaterTower, Cpu, Database, Wifi 
+  Home, Factory, Droplets, Cpu, Database, Wifi 
 } from "lucide-react";
 import { useTelemetry } from "@/context/TelemetryContext";
 import { THRESHOLDS } from "@/lib/constants/thresholds";
@@ -316,7 +316,7 @@ export default function NeptuneAIInfrastructureTopology() {
               <div className="grid grid-cols-3 gap-2 mb-2">
                 <SmartCityZone name="Homes" icon={Home} active={flow > 0} />
                 <SmartCityZone name="Factory" icon={Factory} active={flow > 0 && tdsValue < THRESHOLDS.TDS.WARNING} color="blue" />
-                <SmartCityZone name="Utility" icon={WaterTower} active={flow > 0} color="emerald" />
+                <SmartCityZone name="Utility" icon={Droplets} active={flow > 0} color="emerald" />
               </div>
               <div className="space-y-1.5">
                 <div className="h-1 w-full bg-slate-800/60 rounded-full overflow-hidden border border-slate-700/40">
