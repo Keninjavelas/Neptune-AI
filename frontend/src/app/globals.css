@@ -30,6 +30,28 @@ html {
   @apply bg-slate-700/50 rounded-full hover:bg-slate-600 transition-colors;
 }
 
+/* God-Mode Animations */
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-2px, -2px); }
+}
+
+@keyframes chromatic {
+  0% { text-shadow: 2px 0 red, -2px 0 cyan; }
+  50% { text-shadow: -2px 0 red, 2px 0 cyan; }
+  100% { text-shadow: 2px 0 red, -2px 0 cyan; }
+}
+
+.animate-shake {
+  animation: shake 0.2s infinite;
+}
+
+.animate-chromatic {
+  animation: chromatic 0.1s infinite;
+}
+
 /* Animations */
 @keyframes slideIn {
   from {
