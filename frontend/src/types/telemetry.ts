@@ -25,5 +25,6 @@ export interface TelemetryPacket {
   stabilityScore: number;
   alerts: number;
   isManual: boolean;
+  status?: string;
   lastUpdated: number;
 }

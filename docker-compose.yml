@@ -20,7 +20,7 @@ services:
       start_period: 10s
 
   mqtt:
-    image: eclipse-mosquitto:2-alpine
+    image: eclipse-mosquitto:latest
     container_name: aquaflow_mqtt
     restart: unless-stopped
     ports:

@@ -227,7 +227,7 @@ export default function NeptuneAIInfrastructureTopology() {
                   transition={{ type: "spring", stiffness: 40 }}
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/5 backdrop-blur-[1px]">
-                  <span className="text-2xl font-black text-white/90 drop-shadow-lg">{tankLevel.toFixed(0)}%</span>
+                  <span className="text-2xl font-black text-white/90 drop-shadow-lg">{(tankLevel ?? 0).toFixed(0)}%</span>
                   <span className="text-[7px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">CAPACITY</span>
                 </div>
               </div>
@@ -247,7 +247,7 @@ export default function NeptuneAIInfrastructureTopology() {
                   </motion.div>
                 </div>
                 <div className="text-center">
-                  <div className={`text-xl font-black tracking-tight ${isCritical ? 'text-red-500' : 'text-white/90'}`}>{flow.toFixed(1)}</div>
+                  <div className={`text-xl font-black tracking-tight ${isCritical ? 'text-red-500' : 'text-white/90'}`}>{(flow ?? 0).toFixed(1)}</div>
                   <div className="text-[7px] font-bold text-slate-500 uppercase tracking-widest">{THRESHOLDS.FLOW_RATE.UNIT}</div>
                 </div>
               </div>
@@ -282,7 +282,7 @@ export default function NeptuneAIInfrastructureTopology() {
                     </svg>
                   </motion.div>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-xl font-black ${valveAngle === 0 ? 'text-red-500' : 'text-white/90'}`}>{valveAngle.toFixed(0)}°</span>
+                    <span className={`text-xl font-black ${valveAngle === 0 ? 'text-red-500' : 'text-white/90'}`}>{(valveAngle ?? 0).toFixed(0)}°</span>
                     <span className="text-[7px] font-bold text-slate-600 uppercase tracking-widest">POSITION</span>
                   </div>
                 </div>
