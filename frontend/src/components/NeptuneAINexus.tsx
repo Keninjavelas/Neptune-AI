@@ -86,13 +86,13 @@ export default function NeptuneAINexus() {
               <Droplet className={isCritical ? "text-red-500" : "text-cyan-400"} size={20} />
             </div>
             <div className="flex items-baseline gap-2">
-              <MetricValue value={flow.toFixed(2)} isCritical={isCritical} />
+              <MetricValue value={flow?.toFixed(2) ?? "0.00"} isCritical={isCritical} />
               <span className="text-xl font-black text-slate-600 uppercase">LPM</span>
             </div>
             <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
               <motion.div 
                 className={`h-full ${isCritical ? "bg-red-500 shadow-[0_0_15px_rgba(239,68,68,0.8)]" : "bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.8)]"}`}
-                animate={{ width: `${(flow / 10) * 100}%` }}
+                animate={{ width: `${((flow ?? 0) / 10) * 100}%` }}
               />
             </div>
           </HoloGlassCard>

@@ -180,11 +180,11 @@ export default function NeptuneAICommandCenter() {
         {/* --- Top Metrics --- */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-6">
           <MetricCard label="System Status" value={status === "online" ? "Active" : "Alert"} icon={ShieldCheck} color={status === "online" ? "text-emerald-400" : "text-amber-400"} />
-          <MetricCard label="Flow Rate" value={flow.toFixed(1)} unit="LPM" icon={Activity} color="text-cyan-400" trend={flow * 10} />
-          <MetricCard label="Quality Index" value={wqi} unit="WQI" icon={Droplet} color={wqi > 90 ? "text-cyan-400" : "text-amber-400"} trend={wqi} />
-          <MetricCard label="Tank Capacity" value={level.toFixed(0)} unit="%" icon={Waves} color="text-blue-400" trend={level} />
-          <MetricCard label="Active Alerts" value={alerts} icon={AlertTriangle} color={alerts > 0 ? "text-red-400" : "text-slate-400"} />
-          <MetricCard label="AI Risk Score" value={riskScore} unit="%" icon={Zap} color={riskScore < 20 ? "text-emerald-400" : "text-amber-400"} trend={riskScore} />
+          <MetricCard label="Flow Rate" value={flow?.toFixed(1) ?? "0.0"} unit="LPM" icon={Activity} color="text-cyan-400" trend={(flow ?? 0) * 10} />
+          <MetricCard label="Quality Index" value={wqi ?? 0} unit="WQI" icon={Droplet} color={(wqi ?? 0) > 90 ? "text-cyan-400" : "text-amber-400"} trend={wqi} />
+          <MetricCard label="Tank Capacity" value={level?.toFixed(0) ?? "0"} unit="%" icon={Waves} color="text-blue-400" trend={level} />
+          <MetricCard label="Active Alerts" value={alerts ?? 0} icon={AlertTriangle} color={(alerts ?? 0) > 0 ? "text-red-400" : "text-slate-400"} />
+          <MetricCard label="AI Risk Score" value={riskScore ?? 0} unit="%" icon={Zap} color={(riskScore ?? 0) < 20 ? "text-emerald-400" : "text-amber-400"} trend={riskScore} />
         </div>
 
         {/* --- Main Dashboard Content --- */}

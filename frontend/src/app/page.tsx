@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import NeptuneAINexus from '@/components/NeptuneAINexus';
+import NeptuneAIEnterpriseDashboard from '@/components/NeptuneAIEnterpriseDashboard';
 
 /**
- * Main Page - Neptune AI Nexus
- * Renders the extreme, cinematic "God-Mode" IoT command center
+ * Main Page - Neptune AI Enterprise Dashboard
+ * Renders the production-ready, highly legible water monitoring system
  */
 export default function Page() {
-  return <NeptuneAINexus />;
+  return <NeptuneAIEnterpriseDashboard />;
 }
