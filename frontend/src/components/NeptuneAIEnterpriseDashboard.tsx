@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, memo, useCallback } from "react";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -42,7 +42,7 @@ import NeptuneAIInfrastructureTopology from "./NeptuneAIInfrastructureTopology";
 
 // --- Sub-components ---
 
-const PremiumCard = ({ children, className = "", alert = false, title = "", icon: Icon }: { children: React.ReactNode, className?: string, alert?: boolean, title?: string, icon?: any }) => (
+const PremiumCard = memo(({ children, className = "", alert = false, title = "", icon: Icon }: { children: React.ReactNode, className?: string, alert?: boolean, title?: string, icon?: any }) => (
   <div className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-4 flex flex-col transition-all duration-500 hover:border-slate-700/50 ${alert ? 'border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : ''} ${className}`}>
     {title && (
       <div className="flex items-center justify-between mb-4">
@@ -59,9 +59,9 @@ const PremiumCard = ({ children, className = "", alert = false, title = "", icon
     )}
     {children}
   </div>
-);
+));
 
-const MetricCard = ({ label, value, unit = "", subtext = "", statusColor = "text-slate-50", icon: Icon, alert = false, pulsing = false }: any) => (
+const MetricCard = memo(({ label, value, unit = "", subtext = "", statusColor = "text-slate-50", icon: Icon, alert = false, pulsing = false }: any) => (
   <motion.div 
     whileHover={{ y: -1 }}
     className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-3 flex flex-col justify-between transition-all duration-500 hover:bg-slate-900/60 hover:border-slate-700/50 ${alert ? 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}
@@ -69,7 +69,7 @@ const MetricCard = ({ label, value, unit = "", subtext = "", statusColor = "text
     <div className="flex items-center justify-between mb-2">
       <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
       <div className={`p-1.5 rounded-lg ${alert ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/80 text-slate-500'} border border-slate-700/30`}>
-        <Icon size={14} />
+        <Icon size="14" />
       </div>
     </div>
     <div>
@@ -87,7 +87,227 @@ const MetricCard = ({ label, value, unit = "", subtext = "", statusColor = "text
       </div>
     </div>
   </motion.div>
-);
+));
+
+const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
+  <PremiumCard title="Flow Dynamics" icon={BarChart3} className="flex-1">
+    <div className="flex-1 w-full min-h-[140px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+          <defs>
+            <linearGradient id="cyanGr" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+              <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" opacity={0.2} />
+          <XAxis dataKey="time" hide />
+          <YAxis hide domain={[0, 12]} />
+          <Tooltip 
+            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', fontSize: '9px' }}
+            itemStyle={{ color: '#06b6d4' }}
+          />
+          <Area 
+            type="monotone" 
+            dataKey="flow" 
+            stroke="#06b6d4" 
+            strokeWidth={2} 
+            fill="url(#cyanGr)" 
+            animationDuration={1000}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+    <div className="mt-3 pt-3 border-t border-slate-800/60 grid grid-cols-2 gap-3">
+      <div>
+        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Avg Rate</p>
+        <p className="text-lg font-black text-slate-100">5.4 <span className="text-[9px] text-slate-600">L/M</span></p>
+      </div>
+      <div>
+        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Stability</p>
+        <p className="text-lg font-black text-emerald-400">{stabilityScore}%</p>
+      </div>
+    </div>
+  </PremiumCard>
+));
+
+const OperationsStream = memo(({ logs }: any) => (
+  <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[300px]">
+    <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 font-mono scrollbar-hide">
+      <AnimatePresence initial={false}>
+        {logs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full gap-2 opacity-30">
+            <Processor className="animate-spin" size={20} />
+            <p className="text-[8px] font-bold uppercase tracking-widest">Neural Link...</p>
+          </div>
+        ) : (
+          logs.slice(-12).map((log: any) => (
+            <motion.div
+              key={log.id}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="group flex flex-col gap-1 border-l border-slate-800 pl-2.5 py-0.5 hover:border-cyan-500/50 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${
+                  log.source === 'ALERT' ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
+                  log.source === 'AI' ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5' : 
+                  log.source === 'WARN' ? 'text-amber-500 border-amber-500/20 bg-amber-500/5' :
+                  log.source === 'CTRL' ? 'text-purple-400 border-purple-400/20 bg-purple-400/5' :
+                  log.source === 'SAFE' ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' :
+                  'text-slate-500 border-slate-700 bg-slate-800/50'
+                }`}>
+                  {log.source}
+                </span>
+                <span className="text-[8px] text-slate-600 font-bold">{new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}</span>
+              </div>
+              <p className="text-[10px] text-slate-400 leading-tight group-hover:text-slate-200 transition-colors">
+                {log.message}
+              </p>
+            </motion.div>
+          ))
+        )}
+      </AnimatePresence>
+    </div>
+  </PremiumCard>
+));
+
+const GridDistribution = memo(({ Factory, Home, Waves }: any) => (
+  <PremiumCard title="Grid Distribution" icon={Network} className="flex-1">
+    <div className="space-y-3">
+      {[
+        { id: 'Z-01', name: 'Industrial', load: 84, health: 98, icon: Factory },
+        { id: 'Z-02', name: 'Residential', load: 42, health: 100, icon: Home },
+        { id: 'Z-03', name: 'Agri-Tech', load: 12, health: 92, icon: Waves },
+      ].map((zone) => (
+        <div 
+          key={zone.id} 
+          className="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl hover:border-cyan-500/30 transition-all group"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-slate-900 rounded-lg text-slate-500 group-hover:text-cyan-400 transition-colors">
+                <zone.icon size={14} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-200 uppercase tracking-wide">{zone.name}</p>
+                <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest font-mono">{zone.id}</p>
+              </div>
+            </div>
+            <div className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${zone.health > 95 ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' : 'text-amber-400 border-amber-400/20 bg-amber-400/5'}`}>
+              {zone.health}%
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[7px] font-bold text-slate-500 uppercase tracking-widest">
+              <span>Load Demand</span>
+              <span className="text-cyan-400">{zone.load}%</span>
+            </div>
+            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50">
+              <motion.div 
+                className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.3)]" 
+                initial={{ width: 0 }} 
+                animate={{ width: `${zone.load}%` }} 
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </PremiumCard>
+));
+
+const SystemIntegrity = memo(({ ShieldAlert, Activity, Database }: any) => (
+  <PremiumCard title="System Integrity" icon={ShieldAlert} className="h-auto">
+    <div className="space-y-3">
+      <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
+        <div className="flex items-center gap-2">
+          <Activity size={14} className="text-cyan-400" />
+          <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Heartbeat</span>
+        </div>
+        <span className="text-[9px] font-mono text-emerald-400">NOMINAL</span>
+      </div>
+      <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
+        <div className="flex items-center gap-2">
+          <Database size={14} className="text-purple-400" />
+          <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Synapse</span>
+        </div>
+        <span className="text-[9px] font-mono text-emerald-400">SYNCED</span>
+      </div>
+    </div>
+  </PremiumCard>
+));
+
+const ControlProtocol = memo(({ isManual, valveAngle, setIsManual, setValveAngle }: any) => {
+  const [localAngle, setLocalAngle] = useState(valveAngle);
+  
+  // Sync local angle if it changes from external (e.g. AI isolation)
+  useEffect(() => {
+    setLocalAngle(valveAngle);
+  }, [valveAngle]);
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseInt(e.target.value);
+    setLocalAngle(val);
+    setValveAngle(val); // This is debounced or asynchronous in hook
+  };
+
+  return (
+    <PremiumCard title="Control Protocol" icon={Settings} alert={isManual} className="h-auto relative overflow-hidden">
+      {isManual && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute inset-0 bg-amber-500/5 pointer-events-none"
+        />
+      )}
+      <div className="space-y-4 relative z-10">
+        <div className={`p-3 rounded-xl border transition-all duration-300 text-center ${
+          isManual ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-950/60 border-slate-800/60'
+        }`}>
+          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Actuator Authority</p>
+          <p className={`text-lg font-black tracking-tight ${isManual ? 'text-amber-400' : 'text-emerald-400'}`}>
+            {isManual ? 'MANUAL_CONTROL' : 'AI_AUTONOMOUS'}
+          </p>
+        </div>
+        
+        <button
+          onClick={() => setIsManual(!isManual)}
+          className={`w-full py-3 rounded-xl border font-bold text-[11px] transition-all duration-300 flex items-center justify-center gap-2 group relative overflow-hidden ${
+            isManual 
+              ? 'bg-red-600 border-red-400 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]' 
+              : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
+          }`}
+        >
+          <AlertTriangle size={14} className={isManual ? 'animate-pulse' : ''} />
+          {isManual ? "RELEASE CONTROL" : "INITIATE OVERRIDE"}
+        </button>
+
+        <AnimatePresence>
+          {isManual && (
+            <motion.div 
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="space-y-3 overflow-hidden pt-1"
+            >
+              <div className="flex justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">
+                <span>Restricted</span>
+                <span className="text-amber-400 font-mono">{localAngle}°</span>
+                <span>Full Supply</span>
+              </div>
+              <input 
+                type="range" min="0" max="180" value={localAngle}
+                onChange={handleSliderChange}
+                className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-amber-500 border border-slate-700"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </PremiumCard>
+  );
+});
 
 // --- Main Dashboard ---
 
@@ -103,6 +323,7 @@ export default function NeptuneAIEnterpriseDashboard() {
     isManual,
     wqi,
     riskScore,
+    stabilityScore,
     setIsManual,
     setValveAngle 
   } = useMockTelemetry();
@@ -253,81 +474,8 @@ export default function NeptuneAIEnterpriseDashboard() {
           
           {/* Left Column: Analytics & Intelligence */}
           <div className="lg:col-span-3 flex flex-col gap-4">
-            <PremiumCard title="Flow Dynamics" icon={BarChart3} className="flex-1">
-              <div className="flex-1 w-full min-h-[140px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="cyanGr" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" opacity={0.2} />
-                    <XAxis dataKey="time" hide />
-                    <YAxis hide domain={[0, 12]} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', fontSize: '9px' }}
-                      itemStyle={{ color: '#06b6d4' }}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="flow" 
-                      stroke="#06b6d4" 
-                      strokeWidth={2} 
-                      fill="url(#cyanGr)" 
-                      animationDuration={1000}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-3 pt-3 border-t border-slate-800/60 grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Avg Rate</p>
-                  <p className="text-lg font-black text-slate-100">5.4 <span className="text-[9px] text-slate-600">L/M</span></p>
-                </div>
-                <div>
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Stability</p>
-                  <p className="text-lg font-black text-emerald-400">99.4%</p>
-                </div>
-              </div>
-            </PremiumCard>
-
-            <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[300px]">
-              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 font-mono scrollbar-hide">
-                <AnimatePresence initial={false}>
-                  {logs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-2 opacity-30">
-                      <Processor className="animate-spin" size={20} />
-                      <p className="text-[8px] font-bold uppercase tracking-widest">Neural Link...</p>
-                    </div>
-                  ) : (
-                    logs.slice(-12).map((log) => (
-                      <motion.div
-                        key={log.id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="group flex flex-col gap-1 border-l border-slate-800 pl-2.5 py-0.5 hover:border-cyan-500/50 transition-colors"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${
-                            log.source === 'ALERT' ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
-                            log.source === 'AI_CORE' ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5' : 
-                            'text-slate-500 border-slate-700 bg-slate-800/50'
-                          }`}>
-                            {log.source}
-                          </span>
-                          <span className="text-[8px] text-slate-600 font-bold">{new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 leading-tight group-hover:text-slate-200 transition-colors">
-                          {log.message}
-                        </p>
-                      </motion.div>
-                    ))
-                  )}
-                </AnimatePresence>
-              </div>
-            </PremiumCard>
+            <FlowDynamics chartData={chartData} stabilityScore={stabilityScore} />
+            <OperationsStream logs={logs} />
           </div>
 
           {/* Center Column: Infrastructure Digital Twin */}
@@ -345,112 +493,14 @@ export default function NeptuneAIEnterpriseDashboard() {
 
           {/* Right Column: Control & Distribution */}
           <div className="lg:col-span-3 flex flex-col gap-4">
-            <PremiumCard title="Control Protocol" icon={Settings} alert={isManual} className="h-auto">
-              <div className="space-y-4">
-                <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800/60 text-center">
-                  <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Actuator Authority</p>
-                  <p className={`text-lg font-black tracking-tight ${isManual ? 'text-amber-400' : 'text-emerald-400'}`}>
-                    {isManual ? 'MANUAL_CONTROL' : 'AI_AUTONOMOUS'}
-                  </p>
-                </div>
-                
-                <button
-                  onClick={() => setIsManual(!isManual)}
-                  className={`w-full py-3 rounded-xl border font-bold text-[11px] transition-all duration-300 flex items-center justify-center gap-2 group relative overflow-hidden ${
-                    isManual 
-                      ? 'bg-red-600 border-red-400 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]' 
-                      : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
-                  }`}
-                >
-                  <AlertTriangle size={14} className={isManual ? 'animate-pulse' : ''} />
-                  {isManual ? "RELEASE CONTROL" : "INITIATE OVERRIDE"}
-                </button>
-
-                <AnimatePresence>
-                  {isManual && (
-                    <motion.div 
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="space-y-3 overflow-hidden pt-1"
-                    >
-                      <div className="flex justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">
-                        <span>Restricted</span>
-                        <span className="text-amber-400">{valveAngle}°</span>
-                        <span>Full Supply</span>
-                      </div>
-                      <input 
-                        type="range" min="0" max="180" value={valveAngle}
-                        onChange={(e) => setValveAngle(parseInt(e.target.value))}
-                        className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-amber-500 border border-slate-700"
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </PremiumCard>
-
-            <PremiumCard title="Grid Distribution" icon={Network} className="flex-1">
-              <div className="space-y-3">
-                {[
-                  { id: 'Z-01', name: 'Industrial', load: 84, health: 98, icon: Factory },
-                  { id: 'Z-02', name: 'Residential', load: 42, health: 100, icon: Home },
-                  { id: 'Z-03', name: 'Agri-Tech', load: 12, health: 92, icon: Waves },
-                ].map((zone) => (
-                  <div 
-                    key={zone.id} 
-                    className="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl hover:border-cyan-500/30 transition-all group"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 bg-slate-900 rounded-lg text-slate-500 group-hover:text-cyan-400 transition-colors">
-                          <zone.icon size={14} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-200 uppercase tracking-wide">{zone.name}</p>
-                          <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest font-mono">{zone.id}</p>
-                        </div>
-                      </div>
-                      <div className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${zone.health > 95 ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' : 'text-amber-400 border-amber-400/20 bg-amber-400/5'}`}>
-                        {zone.health}%
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-[7px] font-bold text-slate-500 uppercase tracking-widest">
-                        <span>Load Demand</span>
-                        <span className="text-cyan-400">{zone.load}%</span>
-                      </div>
-                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50">
-                        <motion.div 
-                          className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.3)]" 
-                          initial={{ width: 0 }} 
-                          animate={{ width: `${zone.load}%` }} 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </PremiumCard>
-
-            <PremiumCard title="System Integrity" icon={ShieldAlert} className="h-auto">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Activity size={14} className="text-cyan-400" />
-                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Heartbeat</span>
-                  </div>
-                  <span className="text-[9px] font-mono text-emerald-400">NOMINAL</span>
-                </div>
-                <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <Database size={14} className="text-purple-400" />
-                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Synapse</span>
-                  </div>
-                  <span className="text-[9px] font-mono text-emerald-400">SYNCED</span>
-                </div>
-              </div>
-            </PremiumCard>
+            <ControlProtocol 
+              isManual={isManual} 
+              valveAngle={valveAngle} 
+              setIsManual={setIsManual} 
+              setValveAngle={setValveAngle} 
+            />
+            <GridDistribution Factory={Factory} Home={Home} Waves={Waves} />
+            <SystemIntegrity ShieldAlert={ShieldAlert} Activity={Activity} Database={Database} />
           </div>
 
         </div>
