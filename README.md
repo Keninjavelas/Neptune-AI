@@ -431,10 +431,10 @@ SELECT * FROM anomaly_alerts ORDER BY timestamp DESC LIMIT 10;
 
 ## 👥 Team
 
-- **Your Name** – Hardware & IoT
-- **Your Name** – Backend & AI Logic
-- **Your Name** – Frontend & Dashboard
-- **Your Name** – DevOps & Deployment
+- **Mohammad Ayaan Pasha**
+- **Aryan Kapoor** 
+- **Mohammed Shuraim Khan** 
+- **Maajid ** 
 
 ---
 
