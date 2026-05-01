@@ -112,7 +112,7 @@ const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
           </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1e293b" opacity={0.2} />
           <XAxis dataKey="time" hide />
-          <YAxis hide domain={[0, 12]} />
+          <YAxis hide domain={['auto', 'auto']} />
           <Tooltip 
             contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', fontSize: '9px' }}
             itemStyle={{ color: '#06b6d4' }}

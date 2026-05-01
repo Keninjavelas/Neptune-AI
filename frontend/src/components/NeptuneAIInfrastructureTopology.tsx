@@ -12,8 +12,8 @@ import { THRESHOLDS } from "@/lib/constants/thresholds";
 // --- Sub-components ---
 
 const ComponentCard = ({ children, title, status, alert = false, className = "", icon: Icon }: any) => (
-  <motion.div 
-    className={`bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3 shadow-xl backdrop-blur-md min-w-[180px] transition-all duration-500 ${
+    <motion.div 
+    className={`bg-slate-900/60 border border-slate-800/80 rounded-2xl p-3 shadow-xl backdrop-blur-md min-w-[180px] transition-all duration-500 snap-center ${
       alert ? "border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.15)] bg-red-500/5" : "hover:border-slate-700/50"
     } ${className}`}
   >
@@ -70,7 +70,7 @@ export default function NeptuneAIInfrastructureTopology() {
   const isCritical = anomalyLevel === 2;
 
   return (
-    <div className={`relative w-full h-full min-h-[600px] bg-slate-950/20 rounded-[1.5rem] border border-slate-800/40 overflow-hidden flex flex-col shadow-inner transition-colors duration-1000 ${
+    <div className={`relative w-full h-full min-h-[600px] bg-slate-950/20 rounded-[1.5rem] border border-slate-800/40 flex flex-col shadow-inner transition-colors duration-1000 ${
       isCritical ? 'border-red-500/20 bg-red-500/5' : ''
     }`}>
       
@@ -177,10 +177,10 @@ export default function NeptuneAIInfrastructureTopology() {
       </div>
 
       {/* --- Middle: Physical Pipeline Section --- */}
-      <div className="flex-1 relative flex flex-col items-center justify-center px-6 py-8">
+      <div className="flex-1 relative flex flex-col items-center justify-center px-4 py-12">
         
         {/* Animated Logic Flow Lines */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-20 hidden lg:block">
           <DataFlowLine start={{ x: '12%', y: '5%' }} end={{ x: '12%', y: '25%' }} active={true} reverse />
           <DataFlowLine start={{ x: '35%', y: '5%' }} end={{ x: '35%', y: '25%' }} active={true} reverse />
           <DataFlowLine start={{ x: '50%', y: '5%' }} end={{ x: '50%', y: '25%' }} active={true} alert={isCritical} />
@@ -189,10 +189,10 @@ export default function NeptuneAIInfrastructureTopology() {
         </div>
 
         {/* The Giant Industrial Pipeline */}
-        <div className="relative w-full flex items-center justify-between gap-1">
+        <div className="relative w-full flex overflow-x-auto overflow-y-hidden pb-6 snap-x snap-mandatory gap-6 px-4 scrollbar-hide">
           
           {/* Segmented Industrial Pipe Background (Refined) */}
-          <div className={`absolute left-20 right-20 h-14 bg-slate-900 border-y-2 rounded-full shadow-[inset_0_0_30px_rgba(0,0,0,0.8)] overflow-hidden transition-colors duration-1000 ${
+          <div className={`absolute left-20 right-20 h-14 bg-slate-900 border-y-2 rounded-full shadow-[inset_0_0_30px_rgba(0,0,0,0.8)] overflow-hidden transition-colors duration-1000 hidden md:block ${
             isCritical ? 'border-red-500/50' : 'border-slate-800/80'
           }`}>
             {/* Liquid Flow Animation */}
@@ -218,7 +218,7 @@ export default function NeptuneAIInfrastructureTopology() {
           </div>
 
           {/* 1. TANK (Source) */}
-          <div className="relative z-20 flex flex-col items-center">
+          <div className="relative z-20 flex flex-col items-center w-[280px] min-w-[280px] flex-shrink-0 snap-center">
             <ComponentCard title="Reservoir" status="Online" icon={Waves} alert={tankLevel < THRESHOLDS.TANK_LEVEL.LOW}>
               <div className="relative w-20 h-28 bg-slate-950/80 border border-slate-800/60 rounded-xl overflow-hidden mb-1 shadow-inner">
                 <motion.div 
@@ -235,7 +235,7 @@ export default function NeptuneAIInfrastructureTopology() {
           </div>
 
           {/* 2. FLOW SENSOR */}
-          <div className="relative z-20 flex flex-col items-center">
+          <div className="relative z-20 flex flex-col items-center w-[280px] min-w-[280px] flex-shrink-0 snap-center">
             <ComponentCard title="Flow Link" status={isCritical ? "Anomaly" : "Nominal"} alert={isCritical} icon={Activity}>
               <div className="flex flex-col items-center py-2">
                 <div className={`w-14 h-14 rounded-full flex items-center justify-center border-2 mb-2 transition-all duration-500 ${isCritical ? 'border-red-500/60 bg-red-500/5 shadow-[0_0_15px_rgba(239,68,68,0.2)]' : 'border-cyan-500/20 bg-cyan-500/5'}`}>
@@ -255,7 +255,7 @@ export default function NeptuneAIInfrastructureTopology() {
           </div>
 
           {/* 3. SMART VALVE (Centerpiece) */}
-          <div className="relative z-20 flex flex-col items-center">
+          <div className="relative z-20 flex flex-col items-center w-[280px] min-w-[280px] flex-shrink-0 snap-center">
             <ComponentCard 
               title="Active Valve" 
               status={valveAngle === 0 ? "Locked" : "Supply"} 
@@ -265,34 +265,33 @@ export default function NeptuneAIInfrastructureTopology() {
             >
               <div className="flex flex-col items-center py-2">
                 <div className="relative w-24 h-24 flex items-center justify-center">
-                  <svg className="w-full h-full -rotate-90 filter drop-shadow-xl">
-                    <circle cx="48" cy="48" r="44" fill="none" stroke="#1e293b" strokeWidth="4" />
-                    <motion.circle
-                      cx="48" cy="48" r="44" fill="none" stroke={valveAngle === 0 ? "#ef4444" : "#06b6d4"} strokeWidth="6"
-                      strokeDasharray="276"
-                      animate={{ strokeDashoffset: 276 - (276 * (valveAngle / 180)) }}
-                      transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                      className={valveAngle === 0 ? "drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]"}
-                    />
-                  </svg>
                   <motion.div 
-                    animate={{ scale: [1, 1.05, 1], rotate: valveAngle }}
-                    transition={{ 
-                      rotate: { type: "spring", stiffness: 300, damping: 20 },
-                      scale: { duration: 0.4 } // Use default tween for multi-keyframe scale
-                    }}
-                    className="absolute inset-0 flex flex-col items-center justify-center"
+                    animate={{ rotate: valveAngle }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="absolute inset-0"
                   >
+                    <svg className="w-full h-full -rotate-90 filter drop-shadow-xl">
+                      <circle cx="48" cy="48" r="44" fill="none" stroke="#1e293b" strokeWidth="4" />
+                      <motion.circle
+                        cx="48" cy="48" r="44" fill="none" stroke={valveAngle === 0 ? "#ef4444" : "#06b6d4"} strokeWidth="6"
+                        strokeDasharray="276"
+                        animate={{ strokeDashoffset: 276 - (276 * (valveAngle / 180)) }}
+                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                        className={valveAngle === 0 ? "drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" : "drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]"}
+                      />
+                    </svg>
+                  </motion.div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className={`text-xl font-black ${valveAngle === 0 ? 'text-red-500' : 'text-white/90'}`}>{valveAngle.toFixed(0)}°</span>
                     <span className="text-[7px] font-bold text-slate-600 uppercase tracking-widest">POSITION</span>
-                  </motion.div>
+                  </div>
                 </div>
               </div>
             </ComponentCard>
           </div>
 
           {/* 4. TDS SENSOR */}
-          <div className="relative z-20 flex flex-col items-center">
+          <div className="relative z-20 flex flex-col items-center w-[280px] min-w-[280px] flex-shrink-0 snap-center">
             <ComponentCard title="Purity Link" status={tdsValue > THRESHOLDS.TDS.WARNING ? "Caution" : "Safe"} alert={tdsValue > THRESHOLDS.TDS.WARNING} icon={FlaskConical}>
               <div className="flex flex-col items-center py-2">
                 <div className={`relative w-14 h-14 bg-slate-950/60 border rounded-xl flex items-center justify-center mb-2 transition-all duration-500 ${tdsValue > THRESHOLDS.TDS.WARNING ? 'border-amber-500/40 bg-amber-500/5 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'border-slate-800/80'}`}>
@@ -312,7 +311,7 @@ export default function NeptuneAIInfrastructureTopology() {
           </div>
 
           {/* 5. DISTRIBUTION (Output) */}
-          <div className="relative z-20 flex flex-col items-center">
+          <div className="relative z-20 flex flex-col items-center w-[280px] min-w-[280px] flex-shrink-0 snap-center">
             <ComponentCard title="Grid Link" status={flow > 0 ? "Supply" : "Cutoff"} alert={flow === 0} icon={Building}>
               <div className="grid grid-cols-3 gap-2 mb-2">
                 <SmartCityZone name="Homes" icon={Home} active={flow > 0} />
@@ -334,6 +333,9 @@ export default function NeptuneAIInfrastructureTopology() {
               </div>
             </ComponentCard>
           </div>
+
+          {/* Spacer for horizontal scroll breathing room */}
+          <div className="min-w-[32px] h-1 md:hidden" aria-hidden="true" />
 
         </div>
       </div>
