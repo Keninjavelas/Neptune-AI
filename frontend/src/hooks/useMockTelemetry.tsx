@@ -10,15 +10,22 @@ export type TelemetryLog = {
 
 /**
  * Enterprise-Grade Neptune AI Telemetry Hook
- * Optimized for Information Architecture (IA) and high-fidelity monitoring.
+ * Optimized for Information Architecture (IA) and physical prototype simulation.
  */
 export default function useMockTelemetry(initialFlow = 5.4) {
+  // Sensor States
   const [flow, setFlow] = useState<number>(initialFlow);
+  const [tankLevel, setTankLevel] = useState<number>(85); // %
+  const [tdsValue, setTdsValue] = useState<number>(120); // ppm
   const [valveAngle, setValveAngle] = useState<number>(90);
+  
+  // System States
   const [isManual, setIsManual] = useState<boolean>(false);
   const [alerts, setAlerts] = useState<number>(0);
   const [status, setStatus] = useState<"online" | "critical">("online");
   const [logs, setLogs] = useState<TelemetryLog[]>([]);
+  const [riskScore, setRiskScore] = useState<number>(5);
+  const [wqi, setWqi] = useState<number>(98);
   
   const mounted = useRef(true);
 
@@ -34,53 +41,66 @@ export default function useMockTelemetry(initialFlow = 5.4) {
       source,
       message,
     };
-    // Prepend logs and keep buffer small for IA clarity
     setLogs((s) => [entry, ...s].slice(0, 15));
   }, []);
 
   useEffect(() => {
-    // Initial sequence
     pushLog("SYS", "Neptune AI Enterprise Gateway — Link Established.");
 
     const interval = setInterval(() => {
       if (!mounted.current) return;
 
-      // 1. Simulate Realistic Flow Fluctuations
-      const noise = (Math.random() - 0.5) * 0.4;
-      const drift = (5.4 - flow) * 0.1;
-      let nextFlow = +(flow + noise + drift).toFixed(2);
+      // 1. Simulate Realistic Flow & Level Fluctuations
+      const flowNoise = (Math.random() - 0.5) * 0.4;
+      const flowDrift = (5.4 - flow) * 0.1;
+      let nextFlow = +(flow + flowNoise + flowDrift).toFixed(2);
       
-      // 2. Anomaly Logic (Throttled for enterprise usability)
+      // Level drops slowly as water flows
+      setTankLevel(l => Math.max(0, +(l - (nextFlow / 100)).toFixed(1)));
+      
+      // TDS fluctuates slightly
+      setTdsValue(t => Math.max(50, +(t + (Math.random() - 0.5) * 2).toFixed(0)));
+
+      // 2. Anomaly Logic (Leak or Contamination)
       if (Math.random() < 0.04 && status === "online") {
+        const isContamination = Math.random() > 0.5;
         setStatus("critical");
         setAlerts(a => a + 1);
-        nextFlow = +(nextFlow + Math.random() * 3 + 2).toFixed(2);
-        pushLog("ALERT", `Unusual flow variance: ${nextFlow} L/min detected.`);
         
-        // Auto-mitigation command simulation
+        if (isContamination) {
+          setTdsValue(450);
+          pushLog("ALERT", "CRITICAL: Contamination detected (TDS > 400ppm).");
+          pushLog("AI_CORE", "AI Analysis: Immediate shutoff required to protect output.");
+        } else {
+          nextFlow = +(nextFlow + 3.5).toFixed(2);
+          pushLog("ALERT", `CRITICAL: Abnormal flow variance detected (${nextFlow} L/min).`);
+          pushLog("AI_CORE", "AI Analysis: Probable leak signature identified.");
+        }
+        
+        // Auto-mitigation
         setTimeout(() => {
           if (!isManual) {
-            setValveAngle(45);
-            pushLog("AI_CORE", "Autonomous mitigation: Valve restricted to 45°.");
+            setValveAngle(0);
+            pushLog("SYS", "Autonomous command: Solenoid valve closed.");
           }
         }, 1500);
 
-        // Auto-recovery after 8 seconds
+        // Auto-recovery simulation
         setTimeout(() => {
           setStatus("online");
           if (!isManual) {
             setValveAngle(90);
-            pushLog("SYS", "Flow stabilized. Autonomous restoration complete.");
+            pushLog("SYS", "Flow stabilized. Restoring nominal supply.");
           }
-        }, 8000);
+        }, 10000);
       }
 
       setFlow(nextFlow);
 
-      // 3. Gentle valve drift simulation (only if not manual)
-      if (!isManual && status === "online") {
+      // 3. Valve drift (only if not manual and system healthy)
+      if (!isManual && status === "online" && valveAngle > 0) {
         setValveAngle((v) => {
-          const adj = (Math.random() - 0.5) * 1.5;
+          const adj = (Math.random() - 0.5) * 1;
           return Math.min(180, Math.max(0, Math.round(v + adj)));
         });
       }
@@ -88,15 +108,19 @@ export default function useMockTelemetry(initialFlow = 5.4) {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [flow, status, isManual, pushLog]);
+  }, [flow, status, isManual, valveAngle, pushLog]);
 
   return {
     flow,
+    tankLevel,
+    tdsValue,
     valveAngle,
     isManual,
     alerts,
     status,
     logs,
+    riskScore,
+    wqi,
     setIsManual,
     setValveAngle: (a: number) => {
       setValveAngle(a);
@@ -105,7 +129,8 @@ export default function useMockTelemetry(initialFlow = 5.4) {
     resetAlerts: () => {
       setAlerts(0);
       setStatus("online");
-      pushLog("SYS", "Alert state manually acknowledged by operator.");
+      setTdsValue(120);
+      pushLog("SYS", "System state reset by operator.");
     }
   };
 }

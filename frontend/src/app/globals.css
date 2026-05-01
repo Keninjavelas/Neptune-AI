@@ -9,11 +9,29 @@
 }
 
 body {
-  @apply bg-slate-950 text-slate-50;
+  @apply bg-slate-950 text-slate-50 selection:bg-cyan-500/30;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 html {
   @apply scroll-smooth;
+}
+
+/* Industrial Typography & Effects */
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+}
+
+.text-glow-red {
+  text-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.glass-panel {
+  @apply bg-slate-900/50 backdrop-blur-xl border border-slate-800/50;
 }
 
 /* Custom scrollbar for dark theme */
