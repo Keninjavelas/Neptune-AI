@@ -550,15 +550,7 @@ export default function NeptuneAIEnterpriseDashboard() {
 
           {/* Center Column: Infrastructure Digital Twin */}
           <div className="lg:col-span-6 flex flex-col">
-            <NeptuneAIInfrastructureTopology 
-              flow={flow}
-              tankLevel={tankLevel}
-              tdsValue={tdsValue}
-              valveAngle={valveAngle}
-              status={status}
-              isManual={isManual}
-              alerts={alerts}
-            />
+            <NeptuneAIInfrastructureTopology />
           </div>
 
           {/* Right Column: Control & Distribution */}
