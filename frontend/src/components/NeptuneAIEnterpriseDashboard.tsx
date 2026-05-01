@@ -9,7 +9,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ReferenceLine,
 } from "recharts";
 import {
   Droplet,
@@ -17,33 +16,25 @@ import {
   AlertTriangle,
   Settings,
   ShieldCheck,
-  Clock,
-  ChevronRight,
-  Database,
   Waves,
   Beaker,
-  Radio,
-  Cpu,
   Zap,
-  LayoutGrid,
   Terminal,
   ShieldAlert,
-  ArrowUpRight,
   BarChart3,
-  Network,
   Cpu as Processor,
   Wifi,
-  Factory,
-  Home
+  Radio,
+  Power,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTelemetry } from "@/context/TelemetryContext";
-import NeptuneAIInfrastructureTopology from "./NeptuneAIInfrastructureTopology";
 import { THRESHOLDS } from "@/lib/constants/thresholds";
 import GlobalAlertBanner from "./GlobalAlertBanner";
 
-// --- Sub-components ---
-
+// --- Reusable Premium Card ---
 const PremiumCard = memo(({ children, className = "", alert = false, title = "", icon: Icon }: { children: React.ReactNode, className?: string, alert?: boolean, title?: string, icon?: any }) => (
   <div className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-4 flex flex-col transition-all duration-500 hover:border-slate-700/50 ${alert ? 'border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : ''} ${className}`}>
     {title && (
@@ -64,34 +55,32 @@ const PremiumCard = memo(({ children, className = "", alert = false, title = "",
 ));
 PremiumCard.displayName = "PremiumCard";
 
+// --- Metric Card (KPI) ---
 const MetricCard = memo(({ label, value, unit = "", subtext = "", statusColor = "text-slate-50", icon: Icon, alert = false, pulsing = false }: any) => {
-  if (!Icon) {
-    console.warn(`MetricCard: Icon is undefined for ${label}`);
-    return null;
-  }
+  if (!Icon) return null;
   return (
     <motion.div 
       whileHover={{ y: -1 }}
-      className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-3 flex flex-col justify-between transition-all duration-500 hover:bg-slate-900/60 hover:border-slate-700/50 ${alert ? 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}
+      className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-5 flex flex-col justify-between transition-all duration-500 hover:bg-slate-900/60 hover:border-slate-700/50 ${alert ? 'border-red-500/40 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : ''}`}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">{label}</span>
-        <div className={`p-1.5 rounded-lg ${alert ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/80 text-slate-500'} border border-slate-700/30`}>
-          <Icon size="14" />
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{label}</span>
+        <div className={`p-2 rounded-xl ${alert ? 'bg-red-500/20 text-red-500' : 'bg-slate-800/80 text-slate-500'} border border-slate-700/30`}>
+          <Icon size="18" />
         </div>
       </div>
       <div>
-        <div className="flex items-baseline gap-1 overflow-hidden">
-          <h2 className={`text-2xl lg:text-3xl font-black tracking-tight truncate ${statusColor}`}>
+        <div className="flex items-baseline gap-1.5 overflow-hidden">
+          <h2 className={`text-3xl lg:text-4xl font-black tracking-tight truncate ${statusColor}`}>
             {value}
           </h2>
-          {unit && <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tighter">{unit}</span>}
+          {unit && <span className="text-xs font-bold text-slate-600 uppercase tracking-tighter">{unit}</span>}
         </div>
-        <div className="flex items-center gap-1.5 mt-1">
+        <div className="flex items-center gap-2 mt-2">
           {pulsing && (
-            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_6px_emerald]" />
+            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_emerald]" />
           )}
-          <p className="text-[8px] text-slate-600 font-bold uppercase tracking-wider truncate">{subtext}</p>
+          <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest truncate">{subtext}</p>
         </div>
       </div>
     </motion.div>
@@ -99,11 +88,12 @@ const MetricCard = memo(({ label, value, unit = "", subtext = "", statusColor = 
 });
 MetricCard.displayName = "MetricCard";
 
-const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
-  <PremiumCard title="Flow Dynamics" icon={BarChart3} className="flex-1">
-    <div className="flex-1 w-full min-h-[140px]">
+// --- Realtime Telemetry Graph ---
+const RealtimeFlowGraph = memo(({ chartData, avgFlow, stability }: any) => (
+  <PremiumCard title="Realtime Flow Telemetry" icon={BarChart3} className="h-full">
+    <div className="flex-1 w-full min-h-[300px] mt-2">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <defs>
             <linearGradient id="cyanGr" x1="0" y1="0" x2="0" y2="1">
               <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
@@ -114,34 +104,124 @@ const FlowDynamics = memo(({ chartData, stabilityScore }: any) => (
           <XAxis dataKey="time" hide />
           <YAxis hide domain={['auto', 'auto']} />
           <Tooltip 
-            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', fontSize: '9px' }}
+            contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '10px' }}
             itemStyle={{ color: '#06b6d4' }}
           />
           <Area 
             type="monotone" 
             dataKey="flow" 
             stroke="#06b6d4" 
-            strokeWidth={2} 
+            strokeWidth={3} 
             fill="url(#cyanGr)" 
-            animationDuration={1000}
+            animationDuration={500}
+            isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>
     </div>
-    <div className="mt-3 pt-3 border-t border-slate-800/60 grid grid-cols-2 gap-3">
-      <div>
-        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Avg Rate</p>
-        <p className="text-lg font-black text-slate-100">5.4 <span className="text-[9px] text-slate-600">L/M</span></p>
+    <div className="mt-6 pt-6 border-t border-slate-800/60 grid grid-cols-2 gap-6">
+      <div className="space-y-1">
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Average Throughput</p>
+        <p className="text-2xl font-black text-slate-100">{avgFlow} <span className="text-xs text-slate-600 font-bold">L/M</span></p>
       </div>
-      <div>
-        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Stability</p>
-        <p className="text-lg font-black text-emerald-400">{stabilityScore}%</p>
+      <div className="space-y-1">
+        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Network Stability</p>
+        <p className="text-2xl font-black text-emerald-400">{stability}%</p>
       </div>
     </div>
   </PremiumCard>
 ));
-FlowDynamics.displayName = "FlowDynamics";
+RealtimeFlowGraph.displayName = "RealtimeFlowGraph";
 
+// --- Control & Response Panel ---
+const ResponsePanel = memo(({ 
+  valveState, 
+  relayState, 
+  buzzerState, 
+  isManual, 
+  systemState,
+  setIsManual 
+}: any) => (
+  <PremiumCard title="Control & Response" icon={Settings} alert={systemState !== "NORMAL"} className="h-full">
+    <div className="flex-1 space-y-4">
+      {/* AI Status Badge */}
+      <div className={`p-4 rounded-2xl border flex items-center justify-between transition-all duration-500 ${
+        isManual ? 'bg-amber-500/5 border-amber-500/20' : 'bg-cyan-500/5 border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
+      }`}>
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-xl ${isManual ? 'bg-amber-500/20 text-amber-500' : 'bg-cyan-500/20 text-cyan-400'}`}>
+            <Processor size={20} className={isManual ? "" : "animate-pulse"} />
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Defense Mode</p>
+            <p className={`text-sm font-black tracking-tight ${isManual ? 'text-amber-400' : 'text-cyan-400'}`}>
+              {isManual ? 'MANUAL_OVERRIDE' : 'AUTONOMOUS_ACTIVE'}
+            </p>
+          </div>
+        </div>
+        {!isManual && (
+          <div className="flex items-center gap-2 px-2.5 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full">
+            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+            <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">Secured</span>
+          </div>
+        )}
+      </div>
+
+      {/* Infrastructure States */}
+      <div className="grid grid-cols-1 gap-3">
+        <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
+          <div className="flex items-center gap-3">
+            <Zap size={18} className={valveState === "CLOSED" ? "text-red-500" : "text-cyan-400"} />
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Valve State</span>
+          </div>
+          <span className={`text-xs font-black px-3 py-1 rounded-lg border ${
+            valveState === "CLOSED" ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
+            valveState === "PARTIAL" ? 'text-amber-400 border-amber-400/20 bg-amber-400/5' : 
+            'text-emerald-400 border-emerald-400/20 bg-emerald-400/5'
+          }`}>
+            {valveState}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
+          <div className="flex items-center gap-3">
+            <Radio size={18} className={relayState ? "text-red-500 animate-pulse" : "text-slate-500"} />
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Relay Protection</span>
+          </div>
+          <span className={`text-xs font-black uppercase tracking-widest ${relayState ? 'text-red-500' : 'text-slate-600'}`}>
+            {relayState ? 'TRIPPED' : 'INACTIVE'}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
+          <div className="flex items-center gap-3">
+            {buzzerState ? <Volume2 size={18} className="text-red-500 animate-bounce" /> : <VolumeX size={18} className="text-slate-500" />}
+            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Audio Alert</span>
+          </div>
+          <span className={`text-xs font-black uppercase tracking-widest ${buzzerState ? 'text-red-500' : 'text-slate-600'}`}>
+            {buzzerState ? 'ACTIVE' : 'SILENT'}
+          </span>
+        </div>
+      </div>
+
+      {/* Manual Override Button */}
+      <button
+        onClick={() => setIsManual(!isManual)}
+        className={`w-full py-4 mt-2 rounded-2xl border font-black text-xs transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden ${
+          isManual 
+            ? 'bg-red-600 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)]' 
+            : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
+        }`}
+      >
+        <Power size={16} className={isManual ? 'animate-pulse' : ''} />
+        {isManual ? "RELEASE SYSTEM TO AI" : "INITIATE MANUAL OVERRIDE"}
+      </button>
+    </div>
+  </PremiumCard>
+));
+ResponsePanel.displayName = "ResponsePanel";
+
+// --- Operations Stream (Terminal) ---
 const OperationsStream = memo(({ logs }: any) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -151,62 +231,38 @@ const OperationsStream = memo(({ logs }: any) => {
     }
   }, [logs]);
 
-  const parseLogMessage = (message: string) => {
-    const nodeMatch = message.match(/^\[(.*?)\] (.*)$/);
-    if (nodeMatch) {
-      return {
-        nodeId: nodeMatch[1],
-        content: nodeMatch[2]
-      };
-    }
-    return { nodeId: null, content: message };
-  };
-
   return (
-    <PremiumCard title="Operations Stream" icon={Terminal} className="flex-1 min-h-[300px]">
-      <div className="flex-1 overflow-y-auto space-y-2.5 pr-1 font-mono scrollbar-hide">
+    <PremiumCard title="Infrastructure Operations Stream" icon={Terminal} className="min-h-[200px] max-h-[200px]">
+      <div className="flex-1 overflow-y-auto space-y-2 pr-2 font-mono scrollbar-hide">
         <AnimatePresence initial={false}>
           {logs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-2 opacity-30">
-              <Processor className="animate-spin" size={20} />
-              <p className="text-[8px] font-bold uppercase tracking-widest">Neural Link...</p>
+            <div className="flex items-center justify-center h-full opacity-20">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em]">Establishing Uplink...</p>
             </div>
           ) : (
-            logs.map((log: any) => {
-              const { nodeId, content } = parseLogMessage(log.message);
-              return (
-                <motion.div
-                  key={log.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="group flex flex-col gap-1 border-l border-slate-800 pl-2.5 py-0.5 hover:border-cyan-500/50 transition-colors"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${
-                        log.source === 'ALERT' ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
-                        log.source === 'AI' ? 'text-cyan-400 border-cyan-400/20 bg-cyan-400/5' : 
-                        log.source === 'WARN' ? 'text-amber-500 border-amber-500/20 bg-amber-500/5' :
-                        log.source === 'CTRL' ? 'text-purple-400 border-purple-400/20 bg-purple-400/5' :
-                        log.source === 'SAFE' ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' :
-                        'text-slate-500 border-slate-700 bg-slate-800/50'
-                      }`}>
-                        {log.source}
-                      </span>
-                      {nodeId && (
-                        <span className="text-[7px] font-black px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-cyan-500/80 uppercase tracking-tighter">
-                          {nodeId}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[8px] text-slate-600 font-bold">{new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}</span>
-                  </div>
-                  <p className="text-[10px] text-slate-400 leading-tight group-hover:text-slate-200 transition-colors">
-                    {content}
-                  </p>
-                </motion.div>
-              );
-            })
+            logs.map((log: any) => (
+              <motion.div
+                key={log.id}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-4 text-[11px] leading-relaxed border-b border-slate-800/30 pb-1.5 last:border-0"
+              >
+                <span className="text-slate-600 font-bold min-w-[65px]">
+                  {new Date(log.ts).toLocaleTimeString([], { hour12: false, minute: '2-digit', second: '2-digit' })}
+                </span>
+                <span className={`font-black px-1.5 py-0.5 rounded text-[9px] min-w-[45px] text-center ${
+                  log.source === 'ALERT' ? 'bg-red-500/20 text-red-400' : 
+                  log.source === 'AI' ? 'bg-purple-500/20 text-purple-400' : 
+                  log.source === 'SAFE' ? 'bg-emerald-500/20 text-emerald-400' :
+                  'bg-slate-800 text-slate-500'
+                }`}>
+                  {log.source}
+                </span>
+                <span className="text-slate-400 group-hover:text-slate-200 transition-colors">
+                  {log.message.replace(/^\[.*?\] /, '')}
+                </span>
+              </motion.div>
+            ))
           )}
         </AnimatePresence>
         <div ref={scrollRef} />
@@ -216,149 +272,7 @@ const OperationsStream = memo(({ logs }: any) => {
 });
 OperationsStream.displayName = "OperationsStream";
 
-const GridDistribution = memo(({ FactoryIcon, HomeIcon, WavesIcon }: any) => (
-  <PremiumCard title="Grid Distribution" icon={Network} className="flex-1">
-    <div className="space-y-3">
-      {[
-        { id: 'Z-01', name: 'Industrial', load: 84, health: 98, icon: FactoryIcon },
-        { id: 'Z-02', name: 'Residential', load: 42, health: 100, icon: HomeIcon },
-        { id: 'Z-03', name: 'Agri-Tech', load: 12, health: 92, icon: WavesIcon },
-      ].map((zone) => (
-        <div 
-          key={zone.id} 
-          className="p-3 bg-slate-950/40 border border-slate-800/60 rounded-xl hover:border-cyan-500/30 transition-all group"
-        >
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 bg-slate-900 rounded-lg text-slate-500 group-hover:text-cyan-400 transition-colors">
-                {zone.icon && <zone.icon size={14} />}
-              </div>
-              <div>
-                <p className="text-[10px] font-bold text-slate-200 uppercase tracking-wide">{zone.name}</p>
-                <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest font-mono">{zone.id}</p>
-              </div>
-            </div>
-            <div className={`text-[8px] font-bold px-1.5 py-0.5 rounded-md border ${zone.health > 95 ? 'text-emerald-400 border-emerald-400/20 bg-emerald-400/5' : 'text-amber-400 border-amber-400/20 bg-amber-400/5'}`}>
-              {zone.health}%
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex justify-between text-[7px] font-bold text-slate-500 uppercase tracking-widest">
-              <span>Load Demand</span>
-              <span className="text-cyan-400">{zone.load}%</span>
-            </div>
-            <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden border border-slate-700/50">
-              <motion.div 
-                className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.3)]" 
-                initial={{ width: 0 }} 
-                animate={{ width: `${zone.load}%` }} 
-              />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  </PremiumCard>
-));
-GridDistribution.displayName = "GridDistribution";
-
-const SystemIntegrity = memo(({ ShieldAlertIcon, ActivityIcon, DatabaseIcon }: any) => (
-  <PremiumCard title="System Integrity" icon={ShieldAlert} className="h-auto">
-    <div className="space-y-3">
-      <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
-        <div className="flex items-center gap-2">
-          {ActivityIcon && <ActivityIcon size={14} className="text-cyan-400" />}
-          <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Heartbeat</span>
-        </div>
-        <span className="text-[9px] font-mono text-emerald-400">NOMINAL</span>
-      </div>
-      <div className="flex items-center justify-between p-2 bg-slate-950/40 border border-slate-800/60 rounded-lg">
-        <div className="flex items-center gap-2">
-          {DatabaseIcon && <DatabaseIcon size={14} className="text-purple-400" />}
-          <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider">Synapse</span>
-        </div>
-        <span className="text-[9px] font-mono text-emerald-400">SYNCED</span>
-      </div>
-    </div>
-  </PremiumCard>
-));
-SystemIntegrity.displayName = "SystemIntegrity";
-
-const ControlProtocol = memo(({ isManual, valveAngle, setIsManual, setValveAngle }: any) => {
-  const [localAngle, setLocalAngle] = useState(valveAngle);
-  
-  // Sync local angle if it changes from external (e.g. AI isolation)
-  useEffect(() => {
-    setLocalAngle(valveAngle);
-  }, [valveAngle]);
-
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = parseInt(e.target.value);
-    setLocalAngle(val);
-    setValveAngle(val); // This is debounced or asynchronous in hook
-  };
-
-  return (
-    <PremiumCard title="Control Protocol" icon={Settings} alert={isManual} className="h-auto relative overflow-hidden">
-      {isManual && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute inset-0 bg-amber-500/5 pointer-events-none"
-        />
-      )}
-      <div className="space-y-4 relative z-10">
-        <div className={`p-3 rounded-xl border transition-all duration-300 text-center ${
-          isManual ? 'bg-amber-500/10 border-amber-500/30' : 'bg-slate-950/60 border-slate-800/60'
-        }`}>
-          <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Actuator Authority</p>
-          <p className={`text-lg font-black tracking-tight ${isManual ? 'text-amber-400' : 'text-emerald-400'}`}>
-            {isManual ? 'MANUAL_CONTROL' : 'AI_AUTONOMOUS'}
-          </p>
-        </div>
-        
-        <button
-          onClick={() => setIsManual(!isManual)}
-          className={`w-full py-3 rounded-xl border font-bold text-[11px] transition-all duration-300 flex items-center justify-center gap-2 group relative overflow-hidden ${
-            isManual 
-              ? 'bg-red-600 border-red-400 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]' 
-              : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
-          }`}
-        >
-          <AlertTriangle size={14} className={isManual ? 'animate-pulse' : ''} />
-          {isManual ? "RELEASE CONTROL" : "INITIATE OVERRIDE"}
-        </button>
-
-        <AnimatePresence>
-          {isManual && (
-            <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              className="space-y-3 overflow-hidden pt-1"
-            >
-              <div className="flex justify-between text-[8px] font-bold text-slate-500 uppercase tracking-widest">
-                <span>Restricted</span>
-                <span className="text-amber-400 font-mono">{localAngle}°</span>
-                <span>Full Supply</span>
-              </div>
-              <input 
-                type="range" min="0" max="180" value={localAngle}
-                onChange={handleSliderChange}
-                className="w-full h-1.5 bg-slate-800 rounded-full appearance-none cursor-pointer accent-amber-500 border border-slate-700"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </PremiumCard>
-  );
-});
-ControlProtocol.displayName = "ControlProtocol";
-
-// --- Main Dashboard ---
-
+// --- Main Dashboard Redesign ---
 export default function NeptuneAIEnterpriseDashboard() {
   const {
     telemetry,
@@ -367,20 +281,22 @@ export default function NeptuneAIEnterpriseDashboard() {
     setValveAngle
   } = useTelemetry();
 
+  // Enforce single source of truth from telemetry packet
   const {
     flowRate: flow = 0,
-    tankLevel = 0,
     tds: tdsValue = 0,
-    valveAngle = 0,
-    systemState = "NORMAL",
     riskScore = 0,
-    stabilityScore = 100,
-    alerts = 0,
-    anomalyLevel = 0,
+    systemState = "NORMAL",
+    valveState = "OPEN",
+    relayState = false,
+    buzzerState = false,
+    stability = 100,
+    latency = 12,
+    tankLevel = 100,
     isManual = false
   } = telemetry ?? {};
 
-  const wqi = 100 - ((riskScore ?? 0) * 0.5); // Derived WQI
+  const wqi = 100 - (riskScore * 0.5);
 
   const [currentTime, setCurrentTime] = useState<string>("--:--:--");
   const [chartData, setChartData] = useState<any[]>([]);
@@ -388,12 +304,9 @@ export default function NeptuneAIEnterpriseDashboard() {
 
   useEffect(() => {
     setMounted(true);
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentTime(now.toLocaleTimeString());
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -403,169 +316,135 @@ export default function NeptuneAIEnterpriseDashboard() {
       setChartData(prev => [
         ...prev,
         {
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).slice(3),
+          time: new Date().toLocaleTimeString([], { hour12: false, second: '2-digit' }),
           flow,
-          risk: riskScore
         }
       ].slice(-30));
-    }, 2000);
+    }, 1000);
     return () => clearInterval(interval);
-  }, [flow, mounted, riskScore]);
+  }, [flow, mounted]);
 
   return (
-    <div className={`min-h-screen bg-slate-950 text-slate-50 font-sans antialiased p-3 md:p-4 lg:p-6 selection:bg-cyan-500/30 overflow-x-hidden transition-colors duration-1000 ${
-      systemState === "CRITICAL" ? 'shadow-[inset_0_0_100px_rgba(239,68,68,0.15)] bg-slate-950' : 
-      systemState === "WARNING" ? 'shadow-[inset_0_0_100px_rgba(245,158,11,0.1)]' : ''
+    <div className={`min-h-screen bg-slate-950 text-slate-50 font-sans antialiased p-4 md:p-6 lg:p-8 selection:bg-cyan-500/30 overflow-x-hidden transition-colors duration-1000 ${
+      systemState === "CRITICAL" ? 'shadow-[inset_0_0_150px_rgba(239,68,68,0.2)] bg-slate-950' : ''
     }`}>
 
       <GlobalAlertBanner systemState={systemState} />
 
-      {/* --- Global Background Layer --- */}
+      {/* --- Ambient Background Layer --- */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className={`absolute top-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full blur-[120px] animate-pulse transition-colors duration-1000 ${
+        <div className={`absolute top-[-10%] left-[-5%] w-[60%] h-[60%] rounded-full blur-[150px] animate-pulse transition-colors duration-1000 ${
           systemState === "CRITICAL" ? 'bg-red-500/10' : 'bg-cyan-500/5'
         }`} />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-blue-500/5 rounded-full blur-[150px]" />
       </div>
 
-      <div className="max-w-[1920px] mx-auto space-y-4 relative z-10">
+      <div className="max-w-[1600px] mx-auto space-y-6 relative z-10">
 
         {/* --- Header Section --- */}
-        <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-800/40">
-          <div className="flex items-center gap-4">
+        <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-slate-800/40">
+          <div className="flex items-center gap-5">
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-lg border border-white/10 transition-all duration-500 ${
-                systemState === "CRITICAL" ? 'bg-gradient-to-br from-red-400 to-red-600 shadow-red-500/30' : 'bg-gradient-to-br from-cyan-400 to-blue-600 shadow-cyan-500/30'
+              whileHover={{ scale: 1.05, rotate: 5 }}
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl border border-white/10 transition-all duration-700 ${
+                systemState === "CRITICAL" ? 'bg-gradient-to-br from-red-500 to-red-700 shadow-red-500/40' : 'bg-gradient-to-br from-cyan-500 to-blue-700 shadow-cyan-500/40'
               }`}
             >
-              <Waves className="text-slate-950" size={20} />
+              <Waves className="text-white" size={28} />
             </motion.div>
-            <div>
-              <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
-                <span className="text-white uppercase">NEPTUNE</span>
-                <span className={`font-light italic transition-colors duration-500 ${systemState === "CRITICAL" ? 'text-red-400' : 'text-cyan-400'}`}>AI</span>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-black tracking-tighter flex items-center gap-3">
+                <span className="text-white">NEPTUNE</span>
+                <span className={`italic transition-colors duration-500 ${systemState === "CRITICAL" ? 'text-red-400' : 'text-cyan-400'}`}>AI</span>
               </h1>
-              <div className="text-[8px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-0.5 flex items-center gap-2">
-                <div className={`w-4 h-[1px] transition-colors duration-500 ${systemState === "CRITICAL" ? 'bg-red-500/30' : 'bg-cyan-500/30'}`} />
-                Smart Water Infrastructure Control
-              </div>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-[0.25em]">
+                Realtime Smart Water Infrastructure Monitoring
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-4 px-4 py-2 bg-slate-900/40 border border-slate-800/60 rounded-xl backdrop-blur-xl">
-              <div className="flex flex-col items-end">
-                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Node</span>
-                <span className="text-[10px] font-bold text-slate-200 font-mono">ESP32-AQ-01</span>
-              </div>
-              <div className="w-[1px] h-6 bg-slate-800" />
-              <div className="flex flex-col items-end">
-                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Network</span>
-                <div className={`text-[10px] font-bold flex items-center gap-1.5 transition-colors duration-500 ${systemState === "CRITICAL" ? 'text-red-400' : 'text-emerald-400'}`}>
-                  <motion.div
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                    className={`w-1 h-1 rounded-full shadow-lg ${systemState === "CRITICAL" ? 'bg-red-400 shadow-red-400/50' : 'bg-emerald-400 shadow-emerald-400/50'}`}
-                  />
-                  {systemState === "CRITICAL" ? 'CONGESTED' : 'ACTIVE'}
-                </div>
-              </div>
-              <div className="w-[1px] h-6 bg-slate-800" />
-              <div className="flex flex-col items-end">
-                <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Global Clock</span>
-                <span className="text-[10px] font-bold text-slate-100 font-mono">
-                  {currentTime}
-                </span>
+          <div className="flex items-center gap-4 px-5 py-3 bg-slate-900/40 border border-slate-800/60 rounded-2xl backdrop-blur-2xl shadow-xl">
+            <div className="flex flex-col items-end">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Active Node</span>
+              <span className="text-xs font-bold text-slate-200 font-mono">ESP32-AQ-01</span>
+            </div>
+            <div className="w-[1px] h-8 bg-slate-800" />
+            <div className="flex flex-col items-end">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Uplink</span>
+              <div className={`text-xs font-bold flex items-center gap-2 ${systemState === "CRITICAL" ? 'text-red-400' : 'text-emerald-400'}`}>
+                <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-current shadow-[0_0_8px_currentColor]" />
+                ONLINE • {latency}ms
               </div>
             </div>
+            <div className="w-[1px] h-8 bg-slate-800" />
+            <span className="text-xs font-bold text-slate-100 font-mono tabular-nums">{currentTime}</span>
           </div>
         </header>
 
-        {/* --- Top Metrics Row --- */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* --- Top KPI Row --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             label="System State"
             value={systemState}
             statusColor={systemState === "NORMAL" ? "text-emerald-400" : systemState === "WARNING" ? "text-amber-400" : "text-red-500"}
             icon={ShieldCheck}
             pulsing={systemState === "NORMAL"}
-            subtext={systemState === "NORMAL" ? "Integrity Secure" : "Anomaly Detected"}
+            subtext="Infrastructure Integrity Status"
             alert={systemState !== "NORMAL"}
           />
           <MetricCard
-            label="Current Flow"
-            value={flow?.toFixed(1) ?? "0.0"}
-            unit={THRESHOLDS.FLOW_RATE.UNIT}
-            statusColor={flow > THRESHOLDS.FLOW_RATE.MAX_SAFE || flow < THRESHOLDS.FLOW_RATE.MIN_SAFE ? "text-red-400" : "text-cyan-400"}
-            icon={Droplet}
-            subtext="Live Throughput"
-            alert={flow > THRESHOLDS.FLOW_RATE.MAX_SAFE || flow < THRESHOLDS.FLOW_RATE.MIN_SAFE}
+            label="Flow Rate"
+            value={flow.toFixed(1)}
+            unit="L/M"
+            statusColor={flow > THRESHOLDS.FLOW_RATE.MAX_SAFE ? "text-red-400" : "text-cyan-400"}
+            icon={Activity}
+            subtext="Live Telemetry Updates"
+            alert={flow > THRESHOLDS.FLOW_RATE.MAX_SAFE}
           />
           <MetricCard
-            label="Quality Index"
-            value={wqi?.toFixed(0) ?? 0}
-            unit="WQI"
-            statusColor={wqi > 90 ? "text-emerald-400" : wqi > 70 ? "text-amber-400" : "text-red-400"}
+            label="Water Quality"
+            value={tdsValue.toFixed(0)}
+            unit="TDS"
+            statusColor={tdsValue > THRESHOLDS.TDS.WARNING ? "text-amber-400" : "text-cyan-400"}
             icon={Beaker}
-            subtext="TDS Sensor Feedback"
-            alert={wqi < 70}
-          />
-          <MetricCard
-            label="Tank Capacity"
-            value={tankLevel?.toFixed(0) ?? "0"}
-            unit={THRESHOLDS.TANK_LEVEL.UNIT}
-            statusColor={tankLevel < THRESHOLDS.TANK_LEVEL.LOW ? "text-red-400" : "text-blue-500"}
-            icon={Waves}
-            subtext="Reservoir Level"
-            alert={tankLevel < THRESHOLDS.TANK_LEVEL.LOW}
-          />
-          <MetricCard
-            label="Active Alerts"
-            value={alerts ?? 0}
-            statusColor={alerts > 0 ? "text-red-500" : "text-slate-500"}
-            icon={ShieldAlert}
-            alert={alerts > 0}
-            subtext={alerts > 0 ? `${alerts} Unresolved` : "Zero threats"}
+            subtext={tdsValue > THRESHOLDS.TDS.WARNING ? "Caution: High Mineral Count" : "Optimal Purity Levels"}
+            alert={tdsValue > THRESHOLDS.TDS.WARNING}
           />
           <MetricCard
             label="AI Risk Score"
-            value={riskScore ?? 0}
-            unit={THRESHOLDS.RISK_SCORE.UNIT}
-            statusColor={(riskScore ?? 0) > THRESHOLDS.RISK_SCORE.HIGH ? "text-red-500" : (riskScore ?? 0) > THRESHOLDS.RISK_SCORE.LOW ? "text-amber-400" : "text-emerald-500"}
+            value={riskScore}
+            unit="%"
+            statusColor={riskScore > 70 ? "text-red-500" : riskScore > 30 ? "text-amber-400" : "text-emerald-500"}
             icon={Zap}
-            subtext="Neural Confidence"
-            alert={(riskScore ?? 0) > THRESHOLDS.RISK_SCORE.HIGH}
+            subtext="Realtime Predictive Analysis"
+            alert={riskScore > 70}
           />
         </div>
 
-        {/* --- Main Operational Grid --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-          
-          {/* Left Column: Analytics & Intelligence */}
-          <div className="lg:col-span-3 flex flex-col gap-4">
-            <FlowDynamics chartData={chartData} stabilityScore={stabilityScore} />
-            <OperationsStream logs={logs} />
-          </div>
-
-          {/* Center Column: Infrastructure Digital Twin */}
-          <div className="lg:col-span-6 flex flex-col">
-            <NeptuneAIInfrastructureTopology />
-          </div>
-
-          {/* Right Column: Control & Distribution */}
-          <div className="lg:col-span-3 flex flex-col gap-4">
-            <ControlProtocol 
-              isManual={isManual} 
-              valveAngle={valveAngle} 
-              setIsManual={setIsManual} 
-              setValveAngle={setValveAngle} 
+        {/* --- Main Content Section --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8">
+            <RealtimeFlowGraph 
+              chartData={chartData} 
+              avgFlow={flow.toFixed(1)} 
+              stability={stability} 
             />
-            <GridDistribution FactoryIcon={Factory} HomeIcon={Home} WavesIcon={Waves} />
-            <SystemIntegrity ShieldAlertIcon={ShieldAlert} ActivityIcon={Activity} DatabaseIcon={Database} />
           </div>
-
+          <div className="lg:col-span-4">
+            <ResponsePanel 
+              valveState={valveState}
+              relayState={relayState}
+              buzzerState={buzzerState}
+              isManual={isManual}
+              systemState={systemState}
+              setIsManual={setIsManual}
+            />
+          </div>
         </div>
+
+        {/* --- Bottom Section --- */}
+        <OperationsStream logs={logs} />
+
       </div>
     </div>
   );

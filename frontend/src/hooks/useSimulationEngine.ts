@@ -33,6 +33,9 @@ export function useSimulationEngine({
     systemHealth: 99.4,
     tankLevel: 85,
     stabilityScore: 99.4,
+    stability: 99.4,
+    latency: 12,
+    buzzerState: false,
     alerts: 0,
     isManual: false,
     lastUpdated: Date.now(),
@@ -88,7 +91,7 @@ export function useSimulationEngine({
       else if (prev.valveAngle < 80) vState = "PARTIAL";
 
       // 5. System Health & Stability
-      const newHealth = Math.max(0, 100 - (newRisk * 0.5) - (prev.anomalyLevel * 20));
+      const newStability = +(newHealth * 0.9 + (Math.random() * 10)).toFixed(1);
       
       return {
         ...prev,
@@ -97,10 +100,13 @@ export function useSimulationEngine({
         riskScore: +newRisk.toFixed(0),
         valveState: vState,
         systemHealth: +newHealth.toFixed(1),
-        stabilityScore: +(newHealth * 0.9 + (Math.random() * 10)).toFixed(1),
+        stabilityScore: newStability,
+        stability: newStability,
+        latency: Math.floor(10 + Math.random() * 15),
+        buzzerState: prev.systemState === "CRITICAL",
         tankLevel: Math.max(0, prev.tankLevel - (newFlow / 500)), // Slow depletion
         lastUpdated: Date.now(),
-        relayState: prev.anomalyLevel === 2, // Relay trips on critical
+        relayState: prev.systemState === "CRITICAL", // Relay trips on critical
       };
     });
   }, []);
@@ -117,6 +123,8 @@ export function useSimulationEngine({
       ...prev, 
       anomalyLevel: 2, 
       systemState: "CRITICAL",
+      buzzerState: true,
+      relayState: true,
       alerts: prev.alerts + 1 
     }));
     
@@ -145,7 +153,14 @@ export function useSimulationEngine({
     setTimeout(() => {
       setTelemetry(prev => {
         pushLog("SAFE", "System integrity stabilized. Resuming nominal distribution.");
-        return { ...prev, anomalyLevel: 0, systemState: "NORMAL", valveAngle: 90 };
+        return { 
+          ...prev, 
+          anomalyLevel: 0, 
+          systemState: "NORMAL", 
+          valveAngle: 90,
+          buzzerState: false,
+          relayState: false
+        };
       });
     }, 15000);
 
