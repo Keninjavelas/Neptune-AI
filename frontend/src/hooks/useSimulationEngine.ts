@@ -91,6 +91,7 @@ export function useSimulationEngine({
       else if (prev.valveAngle < 80) vState = "PARTIAL";
 
       // 5. System Health & Stability
+      const newHealth = Math.max(0, 100 - (newRisk * 0.5) - (prev.anomalyLevel * 20));
       const newStability = +(newHealth * 0.9 + (Math.random() * 10)).toFixed(1);
       
       return {
