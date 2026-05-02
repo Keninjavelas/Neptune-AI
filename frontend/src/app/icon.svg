@@ -1,28 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Poseidon trident icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Aqua Flow water droplet icon">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="0%" stop-color="#082f49"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#67e8f9"/>
       <stop offset="100%" stop-color="#0ea5e9"/>
     </linearGradient>
-    <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fde68a"/>
-      <stop offset="100%" stop-color="#f59e0b"/>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ccfbf1"/>
+      <stop offset="100%" stop-color="#a5f3fc"/>
     </linearGradient>
   </defs>
 
   <rect x="2" y="2" width="60" height="60" rx="14" fill="url(#bg)"/>
-
-  <path fill="url(#metal)" d="M31 13h2v30h-2z"/>
-  <path fill="url(#metal)" d="M31 43h2v8h-2z"/>
-
-  <path fill="url(#metal)" d="M31 13h8l-6 11h-2z"/>
-  <path fill="url(#metal)" d="M33 13h8l-8 14z"/>
-
-  <path fill="url(#metal)" d="M23 13h8v11h-2z"/>
-  <path fill="url(#metal)" d="M23 13h8l-6 14h-2z"/>
-
-  <path fill="url(#metal)" d="M27 12a1 1 0 0 1 1 1v12h-2V13a1 1 0 0 1 1-1z"/>
-  <path fill="url(#metal)" d="M37 12a1 1 0 0 1 1 1v12h-2V13a1 1 0 0 1 1-1z"/>
-
-  <path fill="url(#metal)" d="M24 45h16l-1.5 6h-13z"/>
+  <path
+    fill="url(#drop)"
+    d="M32 11c-1.8 4.9-5.4 9.2-8.8 13.3C19.3 29 16 33.1 16 39.2 16 48 23.2 55 32 55s16-7 16-15.8c0-6.1-3.3-10.2-7.2-14.9C37.4 20.2 33.8 15.9 32 11z"
+  />
+  <path
+    fill="#e0f2fe"
+    opacity="0.75"
+    d="M28 22c-4.8 5.7-8 10.1-8 15.5 0 6.3 5.1 11.5 11.5 11.5 1.3 0 2.6-.2 3.8-.6-6.2-.6-11.1-5.8-11.1-12.1 0-4.3 2.3-8.1 6-12.8.8-1 1.6-2.1 2.4-3.2-.9.6-1.8 1.5-2.6 2.7z"
+  />
+  <path
+    fill="url(#wave)"
+    d="M18 42c3.5 0 3.5-2.4 7-2.4s3.5 2.4 7 2.4 3.5-2.4 7-2.4 3.5 2.4 7 2.4v3c-3.5 0-3.5-2.4-7-2.4s-3.5 2.4-7 2.4-3.5-2.4-7-2.4-3.5 2.4-7 2.4z"
+    opacity="0.95"
+  />
 </svg>
