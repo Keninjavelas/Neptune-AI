@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useEffect, useMemo } from "react";
 import { 
   TelemetryPacket, 
   TelemetryLog 
@@ -33,17 +33,25 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   // 2. Hardware Bridge (WebSocket)
   const hw = useHardwareTelemetry();
 
-  // 3. Local mode tracking (Sync backup if hardware packet lacks the key)
+  // 3. Local mode tracking keeps the UI responsive even when the hardware
+  // packet does not immediately echo the current authority mode.
   const [localManualMode, setLocalManualMode] = React.useState(false);
+
+  useEffect(() => {
+    if (typeof hw.telemetry?.isManual === "boolean") {
+      setLocalManualMode(hw.telemetry.isManual);
+    }
+  }, [hw.telemetry?.isManual]);
 
   // 4. Dynamic Data Selection (Single Source of Truth)
   const activeTelemetry = useMemo(() => {
     // If live hardware is enabled AND we have a packet
     if (USE_LIVE_HARDWARE && hw.telemetry) {
       return {
+        ...sim.telemetry,
         ...hw.telemetry,
-        // Fallback to local tracking only if hardware doesn't explicitly report it
-        isManual: hw.telemetry.isManual ?? localManualMode
+        // Prefer the locally requested mode until hardware confirms otherwise.
+        isManual: localManualMode
       };
     }
     // Otherwise fallback to simulation
@@ -74,8 +82,11 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
 
   const setIsManual = (val: boolean) => {
     if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
+      if (val === localManualMode) {
+        return;
+      }
       hw.sendCommand("MANUAL_OVERRIDE");
-      // Update local state so UI reflects the toggle immediately
+      // Update local state so UI reflects the toggle immediately.
       setLocalManualMode(val);
     } else {
       sim.setIsManual(val);

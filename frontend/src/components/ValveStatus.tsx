@@ -20,8 +20,7 @@ export default function ValveStatus({ recommendedAngle = 180, isAutomatic = fals
       setTransitionDuration(isAutomatic ? 1000 : 300);
       setValveAngle(recommendedAngle);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recommendedAngle, isManual, isAutomatic]);
+  }, [recommendedAngle, valveAngle, isManual, isAutomatic]);
 
   const handleValveChange = (angle: number) => {
     setValveAngle(angle);

@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import NeptuneAIEnterpriseDashboard from '@/components/NeptuneAIEnterpriseDashboard';
+import NeptuneAIDashboard from '@/components/NeptuneAIDashboard';
 
 /**
- * Main Page - Neptune AI Enterprise Dashboard
- * Renders the production-ready, highly legible water monitoring system
+ * Main Page - Neptune AI Dashboard
+ * Restores the original dashboard experience
  */
 export default function Page() {
-  return <NeptuneAIEnterpriseDashboard />;
+  return <NeptuneAIDashboard />;
 }
