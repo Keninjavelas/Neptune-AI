@@ -128,6 +128,11 @@ GND     → Common ground
 
 ## 🚀 Quick Start
 
+### 📌 Latest Updates (May 2026)
+- ✅ **Frontend port moved to 3001** to avoid conflicts
+- ✅ **Dark theme UI restored** (slate-950 color scheme)
+- ✅ **Dashboard fully styled** with TailwindCSS + custom animations
+
 ### Prerequisites
 - Node.js 18+ & npm
 - Docker & Docker Compose
@@ -152,8 +157,10 @@ NODE_ENV=development
 PORT=3000
 DATABASE_URL=postgresql://aquaflow:aquaflow@localhost:5432/aquaflow
 MQTT_BROKER_URL=mqtt://localhost:1883
-CORS_ORIGIN=http://localhost:3000
+CORS_ORIGIN=http://localhost:3001
 ```
+
+**Note:** Backend runs on **port 3000**, frontend on **port 3001**
 
 ### 3. Start Infrastructure
 
@@ -169,18 +176,23 @@ npm run dev:infra
 In separate terminals:
 
 ```bash
-# Terminal 1: Backend
+# Terminal 1: Backend (runs on port 3000)
 cd backend
 npm run dev
 
-# Terminal 2: Frontend
+# Terminal 2: Frontend (runs on port 3001)
 cd frontend
 npm run dev
 ```
 
 ### 5. Open Dashboard
 
-Visit **http://localhost:3000** in your browser.
+Visit **http://localhost:3001** in your browser.
+
+The dashboard loads with:
+- Dark-themed Neptune AI UI
+- Live simulation data (no hardware required for MVP)
+- Real-time flow chart and valve controls
 
 ---
 
@@ -339,7 +351,7 @@ npm run dev  # Starts both backend and frontend
 ```
 
 ### Step 2: Show Dashboard 🎨 1 minute
-- Open http://localhost:3000
+- Open http://localhost:3001
 - Show real-time flow chart
 - Show valve status
 
