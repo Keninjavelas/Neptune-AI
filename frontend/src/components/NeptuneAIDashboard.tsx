@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import {
   AreaChart,
   Area,
@@ -14,15 +15,28 @@ import {
 import {
   Zap,
   Droplet,
-  Bell,
   AlertCircle,
   CheckCircle2,
   Gauge,
   Brain,
   Activity,
-  Play,
-  Pause,
 } from 'lucide-react';
+import { useTelemetry } from '@/context/TelemetryContext';
+import { THRESHOLDS } from '@/lib/constants/thresholds';
+
+const InfrastructureNodeMap = dynamic(() => import('@/components/InfrastructureNodeMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6">
+      <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-slate-500">
+        Infrastructure Node Map
+      </p>
+      <div className="mt-4 flex h-[520px] items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-950/60">
+        <p className="text-sm text-slate-400">Initializing tactical map...</p>
+      </div>
+    </div>
+  ),
+});
 
 /**
  * Neptune AI - Dark Mode Water Leak Detection Dashboard
@@ -351,7 +365,8 @@ function ToggleSwitch({
  */
 function ValveGauge({ angle = 90 }: { angle: number }) {
   const circumference = 2 * Math.PI * 45; // radius = 45
-  const offset = circumference - (angle / 360) * circumference;
+  const normalizedAngle = Math.max(0, Math.min(90, angle));
+  const offset = circumference - (normalizedAngle / 90) * circumference;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -410,10 +425,10 @@ function ValveGauge({ angle = 90 }: { angle: number }) {
             0°
           </text>
           <text x="100" y="65" textAnchor="start" fill="#94a3b8" fontSize="11" fontWeight="600">
-            90°
+            45°
           </text>
           <text x="60" y="105" textAnchor="middle" fill="#94a3b8" fontSize="11" fontWeight="600">
-            180°
+            90°
           </text>
 
           {/* Gradient definition */}
@@ -445,225 +460,154 @@ export default function NeptuneAIDashboard({
   activeAlerts = 0,
   flowData: initialFlowData,
 }: NeptuneAIDashboardProps) {
-  // Core state
-  const [status, setStatus] = useState<'online' | 'offline'>(onlineStatus);
-  const [currentFlow, setCurrentFlow] = useState(flowRate);
-  const [alerts, setAlerts] = useState(activeAlerts);
-  const [angle, setAngle] = useState(valveAngle);
-  const [manualOverride, setManualOverride] = useState(false);
+  const {
+    telemetry,
+    logs,
+    setIsManual,
+    setValveAngle,
+    triggerAnomaly,
+    resetSystem,
+    isHardwareActive,
+  } = useTelemetry();
 
-  // New state for enhanced features
-  const [events, setEvents] = useState<SystemEvent[]>([]);
-  const [aiStatus, setAiStatus] = useState<AIStatus>({
-    state: 'monitoring',
-    leakProbability: 0,
-    confidence: 0.85,
-    decision: 'Maintain current flow',
-  });
-  const [systemHealth, setSystemHealth] = useState(100);
-  const [isSimulatingLeak, setIsSimulatingLeak] = useState(false);
-  const [autoDemoMode, setAutoDemoMode] = useState(false);
-  const [demoCycle, setDemoCycle] = useState(0);
+  const {
+    flowRate: liveFlow = flowRate,
+    valveAngle: liveValveAngle = valveAngle,
+    alerts = activeAlerts,
+    riskScore = 0,
+    systemHealth = 100,
+    systemState = onlineStatus === 'online' ? 'NORMAL' : 'OFFLINE',
+    valveState = 'OPEN',
+    isManual = false,
+    stability = 98,
+    latency = 0,
+    lastUpdated = 0,
+  } = telemetry ?? {};
 
-  // Initialize with deterministic data to avoid hydration mismatch
-  const [flowChartData, setFlowChartData] = useState<FlowDataPoint[]>(
-    initialFlowData ||
-      Array.from({ length: 20 }, (_, i) => ({
-        timestamp: i,
-        flow: 4 + Math.sin(i * 0.3) * 1.5,
-      }))
-  );
+  const [flowChartData, setFlowChartData] = useState<FlowDataPoint[]>(() => initialFlowData ?? []);
+  const [statusClock, setStatusClock] = useState(() => Date.now());
 
-  function generateMockFlowData(): FlowDataPoint[] {
-    return Array.from({ length: 20 }, (_, i) => ({
-      timestamp: i,
-      flow: 4 + Math.sin(i * 0.3) * 1.5 + Math.random() * 0.5,
-    }));
-  }
+  useEffect(() => {
+    const timer = window.setInterval(() => setStatusClock(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
-  // Add system event
-  const addEvent = useCallback(
-    (severity: 'info' | 'warning' | 'critical' | 'success', message: string) => {
-      const newEvent: SystemEvent = {
-        id: `${Date.now()}-${Math.random()}`,
-        timestamp: new Date(),
-        severity,
-        message,
+  useEffect(() => {
+    if (typeof liveFlow !== 'number') {
+      return;
+    }
+
+    setFlowChartData((prev) => {
+      const nextPoint: FlowDataPoint = {
+        timestamp: prev.length === 0 ? 1 : prev[prev.length - 1].timestamp + 1,
+        flow: +liveFlow.toFixed(2),
       };
-      setEvents((prev) => [newEvent, ...prev.slice(0, 19)]);
-    },
-    []
-  );
 
-  // Initialize mock data on client-side only
-  useEffect(() => {
-    if (!initialFlowData) {
-      setFlowChartData(generateMockFlowData());
+      if (
+        prev.length > 0 &&
+        prev[prev.length - 1].flow === nextPoint.flow &&
+        lastUpdated === 0
+      ) {
+        return prev;
+      }
+
+      return [...prev.slice(-29), nextPoint];
+    });
+  }, [liveFlow, lastUpdated]);
+
+  const telemetryAgeMs = lastUpdated ? Math.max(0, statusClock - lastUpdated) : null;
+  const isOnline = isHardwareActive ? telemetryAgeMs !== null && telemetryAgeMs < 30000 : true;
+  const status: 'online' | 'offline' = isOnline ? 'online' : 'offline';
+
+  const aiStatus = useMemo<AIStatus>(() => {
+    let state: AIStatus['state'] = 'monitoring';
+    let decision = 'Maintaining nominal flow distribution';
+
+    if (!isOnline) {
+      state = 'analyzing';
+      decision = 'Awaiting live node telemetry uplink';
+    } else if (systemState === 'CRITICAL') {
+      state = 'responding';
+      decision = isManual
+        ? 'Manual containment active on primary valve'
+        : 'Autonomous containment sequence engaged';
+    } else if (systemState === 'WARNING') {
+      state = 'analyzing';
+      decision = 'Monitoring elevated infrastructure variance';
+    } else if (isManual) {
+      state = 'stabilizing';
+      decision = 'Manual override steering valve response';
     }
-    addEvent('info', 'System initialized');
-    addEvent('success', 'Normal flow detected');
-  }, [initialFlowData, addEvent]);
 
-  // Recovery sequence after leak
-  const startRecovery = useCallback(() => {
-    addEvent('info', 'Stabilization mode activated');
-    let recoveryPhase = 0;
+    const boundedConfidence = Math.max(0.35, Math.min(0.99, (stability ?? 98) / 100));
 
-    const recoveryInterval = setInterval(() => {
-      recoveryPhase += 1;
+    return {
+      state,
+      leakProbability: riskScore,
+      confidence: boundedConfidence,
+      decision,
+    };
+  }, [isManual, isOnline, riskScore, stability, systemState]);
 
-      // Gradually restore flow
-      setCurrentFlow((prev) => {
-        const restored = Math.min(4.2, prev + 0.15);
-        return restored;
-      });
-
-      // Reduce leak probability
-      setAiStatus((prev) => ({
-        ...prev,
-        leakProbability: Math.max(0, prev.leakProbability - 8),
-        state: 'stabilizing',
-        decision: 'Gradual flow restoration',
-      }));
-
-      // Open valve gradually
-      setAngle((prev) => Math.min(90, prev + 5));
-
-      // Restore system health
-      setSystemHealth((prev) => Math.min(100, prev + 2.5));
-
-      if (recoveryPhase >= 8) {
-        clearInterval(recoveryInterval);
-        setIsSimulatingLeak(false);
-        setAiStatus((prev) => ({
-          ...prev,
-          state: 'monitoring',
-          leakProbability: 0,
-          decision: 'Maintain current flow',
-        }));
-        addEvent('success', 'System fully recovered');
-        addEvent('success', 'Returning to normal operation');
+  const events = useMemo<SystemEvent[]>(() => {
+    const severityForLog = (source: string): SystemEvent['severity'] => {
+      switch (source) {
+        case 'ALERT':
+          return 'critical';
+        case 'WARN':
+          return 'warning';
+        case 'SAFE':
+          return 'success';
+        default:
+          return 'info';
       }
-    }, 500);
-  }, [addEvent]);
+    };
 
-  // Simulate leak scenario
-  const simulateLeak = useCallback(() => {
-    setIsSimulatingLeak(true);
-    addEvent('warning', 'Flow anomaly detected');
+    return logs.slice(0, 20).map((log) => ({
+      id: log.id,
+      timestamp: new Date(log.ts),
+      severity: severityForLog(log.source),
+      message: log.message.replace(/^\[.*?\]\s*/, ''),
+    }));
+  }, [logs]);
 
-    let flowOffset = 0;
-    let leakSeverity = 0;
-    const leakInterval = setInterval(() => {
-      flowOffset += 0.3;
-      leakSeverity = Math.min(1, flowOffset / 3);
-
-      // Update flow (sharp drop)
-      setCurrentFlow((prev) => {
-        const anomaly = 4 - leakSeverity * 2.5;
-        return Math.max(0.5, anomaly + (Math.random() - 0.5) * 0.2);
-      });
-
-      // Update leak probability
-      setAiStatus((prev) => ({
-        ...prev,
-        leakProbability: Math.min(100, leakSeverity * 95),
-        state: leakSeverity > 0.5 ? 'responding' : 'analyzing',
-        decision:
-          leakSeverity > 0.7
-            ? 'Emergency valve restriction'
-            : 'Reducing valve angle for stabilization',
-      }));
-
-      // Auto-adjust valve
-      const targetAngle = Math.max(20, 90 - leakSeverity * 70);
-      setAngle(targetAngle);
-
-      // Update system health
-      setSystemHealth((prev) => Math.max(20, prev - 2));
-
-      // End leak simulation
-      if (flowOffset >= 3) {
-        clearInterval(leakInterval);
-        addEvent('warning', 'Leak probability increased to 85%');
-        addEvent('critical', 'Automatic redistribution activated');
-
-        // Start recovery
-        setTimeout(() => {
-          startRecovery();
-        }, 3000);
-      }
-    }, 400);
-  }, [addEvent, startRecovery]);
-
-  // Automatic demo mode
-  useEffect(() => {
-    if (!autoDemoMode) return;
-
-    const demoTimer = setTimeout(() => {
-      simulateLeak();
-    }, 5000 + demoCycle * 20000);
-
-    return () => clearTimeout(demoTimer);
-  }, [autoDemoMode, demoCycle, simulateLeak]);
-
-  // Recovery completion
-  useEffect(() => {
-    if (autoDemoMode && !isSimulatingLeak && demoCycle > 0) {
-      const nextCycleTimer = setTimeout(() => {
-        setDemoCycle((prev) => prev + 1);
-      }, 8000);
-      return () => clearTimeout(nextCycleTimer);
-    }
-  }, [autoDemoMode, isSimulatingLeak, demoCycle]);
-
-  // Simulate real-time updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (!isSimulatingLeak) {
-        setFlowChartData((prev) => {
-          const newData = [...prev.slice(1)];
-          const lastTimestamp = prev[prev.length - 1]?.timestamp || 0;
-          const newFlow =
-            4 + Math.sin(lastTimestamp * 0.3) * 1.5 + Math.random() * 0.5;
-          newData.push({
-            timestamp: lastTimestamp + 1,
-            flow: Math.max(0.1, newFlow),
-          });
-          return newData;
-        });
-
-        setCurrentFlow((prev) => {
-          const variation = (Math.random() - 0.5) * 0.3;
-          return Math.max(0.1, Math.min(7, prev + variation));
-        });
-
-        // Update AI status during normal operation
-        if (aiStatus.state === 'monitoring') {
-          setAiStatus((prev) => ({
-            ...prev,
-            leakProbability: Math.max(
-              0,
-              Math.min(20, currentFlow < 3.5 ? 15 : Math.random() * 10)
-            ),
-          }));
-        }
-      }
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, [isSimulatingLeak, aiStatus.state, currentFlow]);
-
-  // Status color helpers
-  const statusColor = status === 'online' ? 'text-emerald-500' : 'text-red-500';
-  const statusBgColor = status === 'online' ? 'bg-emerald-500' : 'bg-red-500';
+  const statusColor =
+    status === 'online'
+      ? systemState === 'CRITICAL'
+        ? 'text-red-500'
+        : systemState === 'WARNING'
+          ? 'text-amber-500'
+          : 'text-emerald-500'
+      : 'text-red-500';
+  const statusBgColor =
+    status === 'online'
+      ? systemState === 'CRITICAL'
+        ? 'bg-red-500'
+        : systemState === 'WARNING'
+          ? 'bg-amber-500'
+          : 'bg-emerald-500'
+      : 'bg-red-500';
   const alertColor = alerts > 0 ? 'text-amber-500' : 'text-emerald-500';
   const riskLevel: 'low' | 'medium' | 'high' =
-    aiStatus.leakProbability > 70
+    riskScore >= THRESHOLDS.RISK_SCORE.HIGH
       ? 'high'
-      : aiStatus.leakProbability > 30
+      : riskScore >= THRESHOLDS.RISK_SCORE.MEDIUM
         ? 'medium'
         : 'low';
+  const flowStats = useMemo(() => {
+    if (flowChartData.length === 0) {
+      return { min: 0, avg: 0, max: 0 };
+    }
+
+    const values = flowChartData.map((point) => point.flow);
+    const total = values.reduce((sum, value) => sum + value, 0);
+
+    return {
+      min: Math.min(...values),
+      avg: total / values.length,
+      max: Math.max(...values),
+    };
+  }, [flowChartData]);
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-50 p-4 md:p-8">
@@ -687,29 +631,17 @@ export default function NeptuneAIDashboard({
           {/* Control buttons */}
           <div className="flex flex-col gap-2">
             <button
-              onClick={() => simulateLeak()}
-              disabled={isSimulatingLeak}
+              onClick={() => triggerAnomaly()}
+              disabled={systemState === 'CRITICAL'}
               className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors text-sm"
             >
-              Simulate Leak
+              Trigger Anomaly
             </button>
             <button
-              onClick={() => setAutoDemoMode(!autoDemoMode)}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors text-sm flex items-center gap-2 ${
-                autoDemoMode
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-slate-700 hover:bg-slate-600'
-              } text-white`}
+              onClick={() => resetSystem()}
+              className="px-4 py-2 rounded-lg font-semibold transition-colors text-sm bg-slate-700 hover:bg-slate-600 text-white"
             >
-              {autoDemoMode ? (
-                <>
-                  <Pause className="w-4 h-4" /> Stop Demo
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4" /> Auto Demo
-                </>
-              )}
+              Reset System
             </button>
           </div>
         </div>
@@ -731,7 +663,7 @@ export default function NeptuneAIDashboard({
                     />
                   </div>
                   <p className={`text-2xl font-bold ${statusColor}`}>
-                    {status === 'online' ? 'Online' : 'Offline'}
+                    {status === 'online' ? systemState : 'OFFLINE'}
                   </p>
                 </div>
               </div>
@@ -739,7 +671,7 @@ export default function NeptuneAIDashboard({
             </div>
             <p className="text-xs text-slate-500">
               {status === 'online'
-                ? 'All systems operational'
+                ? `Node active • ${latency}ms uplink latency`
                 : 'Awaiting connection...'}
             </p>
           </div>
@@ -752,13 +684,15 @@ export default function NeptuneAIDashboard({
                   Current Flow
                 </p>
                 <p className="text-2xl font-bold text-cyan-500">
-                  {currentFlow.toFixed(1)}
+                  {liveFlow.toFixed(1)}
                 </p>
                 <p className="text-xs text-slate-500 mt-1">L/min</p>
               </div>
               <Droplet className="w-6 h-6 text-cyan-500" />
             </div>
-            <div className="text-xs text-slate-500">Expected: 4.0-5.5 L/min</div>
+            <div className="text-xs text-slate-500">
+              Safe envelope: {THRESHOLDS.FLOW_RATE.MIN_SAFE.toFixed(1)}-{THRESHOLDS.FLOW_RATE.MAX_SAFE.toFixed(1)} L/min
+            </div>
           </div>
 
           {/* Active Alerts Card */}
@@ -840,18 +774,18 @@ export default function NeptuneAIDashboard({
                     formatter={(value: any) => [value.toFixed(2) + ' L/min', 'Flow']}
                   />
                   <ReferenceLine
-                    y={4}
+                    y={THRESHOLDS.FLOW_RATE.MIN_SAFE}
                     stroke="#475569"
                     strokeDasharray="5 5"
                     label={{
-                      value: 'Normal (4.0)',
+                      value: `Min Safe (${THRESHOLDS.FLOW_RATE.MIN_SAFE.toFixed(1)})`,
                       position: 'right',
                       fill: '#64748b',
                       fontSize: 11,
                     }}
                   />
                   <ReferenceLine
-                    y={2}
+                    y={THRESHOLDS.FLOW_RATE.CRITICAL_LOW}
                     stroke="#dc2626"
                     strokeDasharray="5 5"
                     label={{
@@ -884,21 +818,19 @@ export default function NeptuneAIDashboard({
               <div className="bg-slate-700/50 rounded-lg p-3">
                 <p className="text-slate-400 mb-1">Min</p>
                 <p className="text-cyan-500 font-semibold">
-                  {Math.min(...flowChartData.map((d) => d.flow)).toFixed(2)}
+                  {flowStats.min.toFixed(2)}
                 </p>
               </div>
               <div className="bg-slate-700/50 rounded-lg p-3">
                 <p className="text-slate-400 mb-1">Avg</p>
                 <p className="text-cyan-500 font-semibold">
-                  {(
-                    flowChartData.reduce((a, b) => a + b.flow, 0) / flowChartData.length
-                  ).toFixed(2)}
+                  {flowStats.avg.toFixed(2)}
                 </p>
               </div>
               <div className="bg-slate-700/50 rounded-lg p-3">
                 <p className="text-slate-400 mb-1">Max</p>
                 <p className="text-cyan-500 font-semibold">
-                  {Math.max(...flowChartData.map((d) => d.flow)).toFixed(2)}
+                  {flowStats.max.toFixed(2)}
                 </p>
               </div>
             </div>
@@ -911,6 +843,11 @@ export default function NeptuneAIDashboard({
           </div>
         </div>
 
+        {/* Live Infrastructure Map */}
+        <div className="mb-8">
+          <InfrastructureNodeMap />
+        </div>
+
         {/* Valve Control + Activity Feed Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Valve Control Panel */}
@@ -919,32 +856,32 @@ export default function NeptuneAIDashboard({
 
             {/* Gauge Visualization */}
             <div className="flex-1 flex items-center justify-center mb-6">
-              <ValveGauge angle={angle} />
+              <ValveGauge angle={liveValveAngle} />
             </div>
 
             {/* Controls */}
             <div className="space-y-4">
               {/* Toggle Switch */}
               <ToggleSwitch
-                enabled={manualOverride}
-                onChange={setManualOverride}
+                enabled={isManual}
+                onChange={setIsManual}
                 label="Manual Override"
               />
 
               {/* Manual Control Slider */}
-              {manualOverride && (
+              {isManual && (
                 <div className="space-y-3 p-4 bg-slate-700/50 rounded-lg border border-slate-600">
                   <input
                     type="range"
                     min="0"
-                    max="180"
-                    value={angle}
-                    onChange={(e) => setAngle(Number(e.target.value))}
+                    max="90"
+                    value={liveValveAngle}
+                    onChange={(e) => setValveAngle(Number(e.target.value))}
                     className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-500"
                   />
                   <div className="flex justify-between text-xs text-slate-400">
                     <span>Closed (0°)</span>
-                    <span>Open (180°)</span>
+                    <span>Open (90°)</span>
                   </div>
                 </div>
               )}
@@ -952,24 +889,23 @@ export default function NeptuneAIDashboard({
               {/* Status Badge */}
               <div
                 className={`p-3 rounded-lg border ${
-                  angle < 60
+                  valveState === 'CLOSED'
                     ? 'bg-red-500/10 border-red-500/30'
-                    : angle > 120
+                    : valveState === 'OPEN'
                       ? 'bg-emerald-500/10 border-emerald-500/30'
                       : 'bg-amber-500/10 border-amber-500/30'
                 }`}
               >
                 <p
                   className={`text-xs font-semibold ${
-                    angle < 60
+                    valveState === 'CLOSED'
                       ? 'text-red-500'
-                      : angle > 120
+                      : valveState === 'OPEN'
                         ? 'text-emerald-500'
                         : 'text-amber-500'
                   }`}
                 >
-                  Valve is{' '}
-                  {angle < 60 ? 'Closed' : angle > 120 ? 'Fully Open' : 'Partially Open'}
+                  Valve is {valveState} at {liveValveAngle.toFixed(0)}°
                 </p>
               </div>
             </div>
@@ -988,8 +924,8 @@ export default function NeptuneAIDashboard({
         {/* Footer */}
         <div className="text-center text-xs text-slate-500 border-t border-slate-700 pt-6">
           <p>
-            Neptune AI v1.0 | Real-time Water Infrastructure Monitoring{' '}
-            {autoDemoMode && '| Auto Demo Mode Active'}
+            Neptune AI v1.0 | Real-time Water Infrastructure Monitoring |{' '}
+            {isHardwareActive ? 'Live Edge Node Mode' : 'Simulation Mode'}
           </p>
         </div>
       </div>

@@ -1,3 +1,5 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -219,6 +221,117 @@ html {
 
 .text-transition {
   transition: color 0.3s ease;
+}
+
+.leaflet-container {
+  background: #020617;
+  font-family: inherit;
+}
+
+.leaflet-control-attribution,
+.leaflet-control-zoom {
+  background: rgba(2, 6, 23, 0.88) !important;
+  border: 1px solid rgba(51, 65, 85, 0.7) !important;
+  color: #94a3b8 !important;
+}
+
+.leaflet-control-attribution a,
+.leaflet-control-zoom a {
+  color: #cbd5e1 !important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: rgba(2, 6, 23, 0.94) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(51, 65, 85, 0.85);
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.45);
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+}
+
+.infrastructure-node-icon {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.node-marker-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+}
+
+.node-marker-ring {
+  position: absolute;
+  inset: 3px;
+  border-radius: 9999px;
+  border: 2px solid currentColor;
+  animation: nodePulse 1.8s ease-out infinite;
+  opacity: 0.65;
+}
+
+.node-marker-core {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 24px currentColor;
+}
+
+.node-marker-heartbeat {
+  position: absolute;
+  inset: 3px;
+  border-radius: 9999px;
+  background: currentColor;
+  animation: heartbeat 1.2s ease-in-out infinite;
+}
+
+.node-normal {
+  color: #10b981;
+}
+
+.node-warning {
+  color: #f59e0b;
+}
+
+.node-critical {
+  color: #ef4444;
+}
+
+.node-offline {
+  color: #64748b;
+}
+
+@keyframes nodePulse {
+  0% {
+    transform: scale(0.75);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.2);
+    opacity: 0.15;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+
+@keyframes heartbeat {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
 }
 
 /* Card styling */
