@@ -34,8 +34,15 @@ import { useTelemetry } from "@/context/TelemetryContext";
 import { THRESHOLDS } from "@/lib/constants/thresholds";
 import GlobalAlertBanner from "./GlobalAlertBanner";
 
-// --- Reusable Premium Card ---
-const PremiumCard = memo(({ children, className = "", alert = false, title = "", icon: Icon }: { children: React.ReactNode, className?: string, alert?: boolean, title?: string, icon?: any }) => (
+interface PremiumCardProps {
+  children: React.ReactNode;
+  className?: string;
+  alert?: boolean;
+  title?: string;
+  icon?: any;
+}
+
+const PremiumCard = memo(({ children, className = "", alert = false, title = "", icon: Icon }: PremiumCardProps) => (
   <div className={`bg-slate-900/40 backdrop-blur-xl border border-slate-800/60 rounded-2xl p-4 flex flex-col transition-all duration-500 hover:border-slate-700/50 ${alert ? 'border-red-500/50 shadow-[0_0_20px_rgba(239,68,68,0.1)]' : ''} ${className}`}>
     {title && (
       <div className="flex items-center justify-between mb-4">
@@ -140,85 +147,128 @@ const ResponsePanel = memo(({
   buzzerState, 
   isManual, 
   systemState,
-  setIsManual 
-}: any) => (
-  <PremiumCard title="Control & Response" icon={Settings} alert={systemState !== "NORMAL"} className="h-full">
-    <div className="flex-1 space-y-4">
-      {/* AI Status Badge */}
-      <div className={`p-4 rounded-2xl border flex items-center justify-between transition-all duration-500 ${
-        isManual ? 'bg-amber-500/5 border-amber-500/20' : 'bg-cyan-500/5 border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
-      }`}>
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-xl ${isManual ? 'bg-amber-500/20 text-amber-500' : 'bg-cyan-500/20 text-cyan-400'}`}>
-            <Processor size={20} className={isManual ? "" : "animate-pulse"} />
+  setIsManual,
+  triggerAnomaly,
+  resetSystem
+}: any) => {
+  const [isPending, setIsPending] = useState(false);
+
+  const handleAction = useCallback((action: () => void) => {
+    setIsPending(true);
+    action();
+    setTimeout(() => setIsPending(false), 500);
+  }, []);
+
+  return (
+    <PremiumCard title="Control & Response" icon={Settings} alert={systemState !== "NORMAL"} className="h-full">
+      <div className="flex-1 space-y-4">
+        {/* Simulation Controls */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            disabled={isPending}
+            onClick={() => handleAction(triggerAnomaly)}
+            className="flex flex-col items-center justify-center gap-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl hover:bg-amber-500/20 hover:border-amber-500/50 transition-all group shadow-[0_0_15px_rgba(245,158,11,0.05)] disabled:opacity-50"
+          >
+            <div className="p-2 bg-amber-500/20 rounded-xl text-amber-500 group-hover:scale-110 transition-transform">
+              <AlertTriangle size={18} />
+            </div>
+            <span className="text-[9px] font-black text-amber-500/80 uppercase tracking-widest">Initiate Anomaly</span>
+          </motion.button>
+
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            disabled={isPending}
+            onClick={() => handleAction(resetSystem)}
+            className="flex flex-col items-center justify-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all group shadow-[0_0_15px_rgba(16,185,129,0.05)] disabled:opacity-50"
+          >
+            <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-500 group-hover:scale-110 transition-transform">
+              <ShieldCheck size={18} />
+            </div>
+            <span className="text-[9px] font-black text-emerald-500/80 uppercase tracking-widest">Reset System</span>
+          </motion.button>
+        </div>
+
+        {/* AI Status Badge */}
+        <div className={`p-4 rounded-2xl border flex items-center justify-between transition-all duration-500 ${
+          isManual ? 'bg-red-500/5 border-red-500/20' : 'bg-cyan-500/5 border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]'
+        }`}>
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-xl ${isManual ? 'bg-red-500/20 text-red-500' : 'bg-cyan-500/20 text-cyan-400'}`}>
+              <Processor size={20} className={isManual ? "" : "animate-pulse"} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Defense Mode</p>
+              <p className={`text-sm font-black tracking-tight ${isManual ? 'text-red-400' : 'text-cyan-400'}`}>
+                {isManual ? 'OVERRIDE_ACTIVE' : 'AUTONOMOUS_ACTIVE'}
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Defense Mode</p>
-            <p className={`text-sm font-black tracking-tight ${isManual ? 'text-amber-400' : 'text-cyan-400'}`}>
-              {isManual ? 'MANUAL_OVERRIDE' : 'AUTONOMOUS_ACTIVE'}
-            </p>
+          {!isManual && (
+            <div className="flex items-center gap-2 px-2.5 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full">
+              <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
+              <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">Secured</span>
+            </div>
+          )}
+        </div>
+
+        {/* Infrastructure States */}
+        <div className="grid grid-cols-1 gap-3">
+          <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
+            <div className="flex items-center gap-3">
+              <Zap size={18} className={valveState === "CLOSED" ? "text-red-500" : "text-cyan-400"} />
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Valve State</span>
+            </div>
+            <span className={`text-xs font-black px-3 py-1 rounded-lg border ${
+              valveState === "CLOSED" ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
+              valveState === "PARTIAL" ? 'text-amber-400 border-amber-400/20 bg-amber-400/5' : 
+              'text-emerald-400 border-emerald-400/20 bg-emerald-400/5'
+            }`}>
+              {valveState}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
+            <div className="flex items-center gap-3">
+              <Radio size={18} className={relayState ? "text-red-500 animate-pulse" : "text-slate-500"} />
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Relay Protection</span>
+            </div>
+            <span className={`text-xs font-black uppercase tracking-widest ${relayState ? 'text-red-500' : 'text-slate-600'}`}>
+              {relayState ? 'TRIPPED' : 'INACTIVE'}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
+            <div className="flex items-center gap-3">
+              {buzzerState ? <Volume2 size={18} className="text-red-500 animate-bounce" /> : <VolumeX size={18} className="text-slate-500" />}
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Audio Alert</span>
+            </div>
+            <span className={`text-xs font-black uppercase tracking-widest ${buzzerState ? 'text-red-500' : 'text-slate-600'}`}>
+              {buzzerState ? 'ACTIVE' : 'SILENT'}
+            </span>
           </div>
         </div>
-        {!isManual && (
-          <div className="flex items-center gap-2 px-2.5 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded-full">
-            <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }} className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-            <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">Secured</span>
-          </div>
-        )}
+
+        {/* Manual Override Button */}
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          disabled={isPending}
+          onClick={() => handleAction(() => setIsManual(!isManual))}
+          className={`w-full py-4 mt-2 rounded-2xl border font-black text-xs transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden ${
+            isManual 
+              ? 'bg-red-600 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)]' 
+              : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
+          }`}
+        >
+          <Power size={16} className={isManual ? 'animate-pulse' : ''} />
+          {isManual ? "RELEASE SYSTEM TO AI" : "INITIATE MANUAL OVERRIDE"}
+        </motion.button>
       </div>
+    </PremiumCard>
+  );
+});
 
-      {/* Infrastructure States */}
-      <div className="grid grid-cols-1 gap-3">
-        <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
-          <div className="flex items-center gap-3">
-            <Zap size={18} className={valveState === "CLOSED" ? "text-red-500" : "text-cyan-400"} />
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Valve State</span>
-          </div>
-          <span className={`text-xs font-black px-3 py-1 rounded-lg border ${
-            valveState === "CLOSED" ? 'text-red-500 border-red-500/20 bg-red-500/5' : 
-            valveState === "PARTIAL" ? 'text-amber-400 border-amber-400/20 bg-amber-400/5' : 
-            'text-emerald-400 border-emerald-400/20 bg-emerald-400/5'
-          }`}>
-            {valveState}
-          </span>
-        </div>
 
-        <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
-          <div className="flex items-center gap-3">
-            <Radio size={18} className={relayState ? "text-red-500 animate-pulse" : "text-slate-500"} />
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Relay Protection</span>
-          </div>
-          <span className={`text-xs font-black uppercase tracking-widest ${relayState ? 'text-red-500' : 'text-slate-600'}`}>
-            {relayState ? 'TRIPPED' : 'INACTIVE'}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl group hover:border-slate-700/50 transition-all">
-          <div className="flex items-center gap-3">
-            {buzzerState ? <Volume2 size={18} className="text-red-500 animate-bounce" /> : <VolumeX size={18} className="text-slate-500" />}
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">Audio Alert</span>
-          </div>
-          <span className={`text-xs font-black uppercase tracking-widest ${buzzerState ? 'text-red-500' : 'text-slate-600'}`}>
-            {buzzerState ? 'ACTIVE' : 'SILENT'}
-          </span>
-        </div>
-      </div>
-
-      {/* Manual Override Button */}
-      <button
-        onClick={() => setIsManual(!isManual)}
-        className={`w-full py-4 mt-2 rounded-2xl border font-black text-xs transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden ${
-          isManual 
-            ? 'bg-red-600 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)]' 
-            : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
-        }`}
-      >
-        <Power size={16} className={isManual ? 'animate-pulse' : ''} />
-        {isManual ? "RELEASE SYSTEM TO AI" : "INITIATE MANUAL OVERRIDE"}
-      </button>
-    </div>
-  </PremiumCard>
-));
 ResponsePanel.displayName = "ResponsePanel";
 
 // --- Operations Stream (Terminal) ---
@@ -278,7 +328,9 @@ export default function NeptuneAIEnterpriseDashboard() {
     telemetry,
     logs,
     setIsManual,
-    setValveAngle
+    setValveAngle,
+    triggerAnomaly,
+    resetSystem
   } = useTelemetry();
 
   // Enforce single source of truth from telemetry packet
@@ -438,6 +490,8 @@ export default function NeptuneAIEnterpriseDashboard() {
               isManual={isManual}
               systemState={systemState}
               setIsManual={setIsManual}
+              triggerAnomaly={triggerAnomaly}
+              resetSystem={resetSystem}
             />
           </div>
         </div>

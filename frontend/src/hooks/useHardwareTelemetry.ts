@@ -24,6 +24,10 @@ export const useHardwareTelemetry = () => {
         ws.onopen = () => {
             console.log('[WS] Connected to Hardware Bridge');
             setIsHardwareConnected(true);
+            
+            // Identify as dashboard to the backend
+            ws.send(JSON.stringify({ type: 'dashboard' }));
+            
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
                 reconnectTimeoutRef.current = null;
@@ -76,5 +80,14 @@ export const useHardwareTelemetry = () => {
         };
     }, [connect]);
 
-    return { telemetry, isHardwareConnected }; 
+    const sendCommand = useCallback((command: string) => {
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({ command }));
+            console.log(`[WS] Command sent: ${command}`);
+        } else {
+            console.error('[WS] Cannot send command: WebSocket not connected');
+        }
+    }, []);
+
+    return { telemetry, isHardwareConnected, sendCommand }; 
 }; 

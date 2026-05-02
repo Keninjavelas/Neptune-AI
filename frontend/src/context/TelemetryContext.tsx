@@ -50,14 +50,49 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     return sim.logs;
   }, [sim.logs]);
 
+  const triggerAnomaly = (type?: string) => {
+    if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
+      hw.sendCommand("SIMULATE_ANOMALY");
+    } else {
+      sim.triggerAnomaly(type);
+    }
+  };
+
+  const resetSystem = () => {
+    if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
+      hw.sendCommand("RESET_SYSTEM");
+    } else {
+      sim.resetSystem();
+    }
+  };
+
+  const setIsManual = (val: boolean) => {
+    if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
+      hw.sendCommand("MANUAL_OVERRIDE");
+    } else {
+      sim.setIsManual(val);
+    }
+  };
+
+  const setValveAngle = (angle: number) => {
+    if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
+      // For demo, we treat any valve angle change as a MANUAL_OVERRIDE 
+      // or specific command if the ESP32 supports it. 
+      // Here we map to MANUAL_OVERRIDE as requested.
+      hw.sendCommand("MANUAL_OVERRIDE");
+    } else {
+      sim.setValveAngle(angle);
+    }
+  };
+
   return (
     <TelemetryContext.Provider value={{ 
       telemetry: activeTelemetry, 
       logs: activeLogs, 
-      setIsManual: sim.setIsManual, 
-      setValveAngle: sim.setValveAngle, 
-      triggerAnomaly: sim.triggerAnomaly, 
-      resetSystem: sim.resetSystem,
+      setIsManual, 
+      setValveAngle, 
+      triggerAnomaly, 
+      resetSystem,
       isHardwareActive: USE_LIVE_HARDWARE && hw.isHardwareConnected
     }}>
       {children}
