@@ -1,7 +1,7 @@
 {
-  "name": "aquaflow-ai-backend",
+  "name": "neptune-ai-backend",
   "version": "1.0.0",
-  "description": "AquaFlow AI Backend — Real-time Water Flow Monitoring & Leak Detection",
+  "description": "Neptune-AI Backend — Real-time Water Flow Monitoring & Leak Detection",
   "main": "src/server.js",
   "scripts": {
     "dev": "node src/server.js",
@@ -9,7 +9,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "aquaflow-ai": "file:..",
+    "neptune-ai": "file:..",
     "cors": "^2.8.6",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

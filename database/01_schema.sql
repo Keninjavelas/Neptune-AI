@@ -1,4 +1,4 @@
--- AquaFlow AI MVP Schema
+-- Neptune-AI MVP Schema
 -- Simple water flow monitoring and leak detection
 
 CREATE TABLE IF NOT EXISTS "flow_telemetry" (

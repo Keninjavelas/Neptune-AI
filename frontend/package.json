@@ -1,5 +1,5 @@
 {
-  "name": "aquaflow-ai-frontend",
+  "name": "neptune-ai-frontend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -14,7 +14,7 @@
     "@react-three/fiber": "^8.18.0",
     "@types/leaflet": "^1.9.21",
     "@types/three": "^0.184.0",
-    "aquaflow-ai": "file:..",
+    "neptune-ai": "file:..",
     "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.395.0",

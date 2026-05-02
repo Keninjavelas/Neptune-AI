@@ -1,4 +1,4 @@
-# 🌊 AquaFlow AI
+# 🌊 Neptune-AI
 
 **AI-powered smart water leak detection & automatic response system**
 
@@ -6,7 +6,7 @@
 
 ## 📋 Project Overview
 
-AquaFlow AI is a **real-time water monitoring and leak detection system** designed for the hackathon. It combines IoT sensors, AI anomaly detection, and automated valve control to detect water leaks instantly and respond autonomously.
+Neptune-AI is a **real-time water monitoring and leak detection system** designed for the hackathon. It combines IoT sensors, AI anomaly detection, and automated valve control to detect water leaks instantly and respond autonomously.
 
 ### The Problem
 - **Water leaks cost millions** in wasted resources and infrastructure damage
@@ -14,7 +14,7 @@ AquaFlow AI is a **real-time water monitoring and leak detection system** design
 - **No real-time response** mechanisms exist in traditional systems
 
 ### The Solution
-AquaFlow AI **detects leaks in seconds and closes valves automatically**—preventing waste and damage before it spreads.
+Neptune-AI **detects leaks in seconds and closes valves automatically**—preventing waste and damage before it spreads.
 
 ---
 
@@ -28,7 +28,7 @@ AquaFlow AI **detects leaks in seconds and closes valves automatically**—preve
                      │ MQTT Telemetry
                      ↓
 ┌──────────────────────────────────────────────────────────────┐
-│  AquaFlow AI Backend (Node.js + Express)                     │
+│  Neptune-AI Backend (Node.js + Express)                     │
 │  ✓ Receives flow data in real-time                           │
 │  ✓ Compares actual vs. expected flow                         │
 │  ✓ Detects abnormal spikes/drops                             │
@@ -141,8 +141,8 @@ GND     → Common ground
 ### 1. Clone & Install
 
 ```bash
-git clone https://github.com/yourusername/aquaflow-ai.git
-cd aquaflow-ai
+git clone https://github.com/yourusername/neptune-ai.git
+cd neptune-ai
 
 # Install all dependencies
 npm run install:all
@@ -155,7 +155,7 @@ Create `.env` in the `backend/` folder:
 ```env
 NODE_ENV=development
 PORT=3000
-DATABASE_URL=postgresql://aquaflow:aquaflow@localhost:5432/aquaflow
+DATABASE_URL=postgresql://neptune:neptune@localhost:5432/neptune
 MQTT_BROKER_URL=mqtt://localhost:1883
 CORS_ORIGIN=http://localhost:3001
 ```
@@ -243,7 +243,7 @@ The dashboard loads with:
 {
   "channel": "telemetry",
   "data": {
-    "topic": "aquaflow/esp32/device-01/flow",
+    "topic": "neptune/esp32/device-01/flow",
     "data": {
       "flow": 5.2,
       "pressure": 2.5,
@@ -289,7 +289,7 @@ if (actualFlow < EXPECTED_FLOW * BLOCKAGE_THRESHOLD) {
 ## 📁 Project Structure
 
 ```
-aquaflow-ai/
+neptune-ai/
 ├── backend/
 │   ├── src/
 │   │   ├── app.js              # Express app setup
@@ -379,13 +379,13 @@ npm run dev  # Starts both backend and frontend
 
 **Sensor → Backend**
 ```
-aquaflow/esp32/{device_id}/flow
+neptune/esp32/{device_id}/flow
   Payload: { flow, pressure, temperature, timestamp }
 ```
 
 **Backend → Valve**
 ```
-aquaflow/esp32/{device_id}/servo/command
+neptune/esp32/{device_id}/servo/command
   Payload: { angle: 0-180, timestamp }
 ```
 
@@ -417,7 +417,7 @@ docker logs aquaflow_mqtt
 
 ```bash
 # Connect to PostgreSQL
-psql postgresql://aquaflow:aquaflow@localhost:5432/aquaflow
+psql postgresql://neptune:neptune@localhost:5432/neptune
 
 # View recent telemetry
 SELECT * FROM flow_telemetry ORDER BY timestamp DESC LIMIT 10;

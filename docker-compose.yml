@@ -1,19 +1,19 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: aquaflow_postgres
+    container_name: neptune_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: aquaflow
-      POSTGRES_PASSWORD: aquaflow
-      POSTGRES_DB: aquaflow
+      POSTGRES_USER: neptune
+      POSTGRES_PASSWORD: neptune
+      POSTGRES_DB: neptune
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U aquaflow"]
+      test: ["CMD-SHELL", "pg_isready -U neptune"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -21,7 +21,7 @@ services:
 
   mqtt:
     image: eclipse-mosquitto:latest
-    container_name: aquaflow_mqtt
+    container_name: neptune_mqtt
     restart: unless-stopped
     ports:
       - "1883:1883"

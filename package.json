@@ -1,7 +1,7 @@
 {
-  "name": "aquaflow-ai",
+  "name": "neptune-ai",
   "version": "1.0.0",
-  "description": "AquaFlow AI — Smart Water Leak Detection & Automatic Response System",
+  "description": "Neptune-AI — Smart Water Leak Detection & Automatic Response System",
   "private": true,
   "scripts": {
     "install:all": "npm install && npm install --prefix backend && npm install --prefix frontend",
