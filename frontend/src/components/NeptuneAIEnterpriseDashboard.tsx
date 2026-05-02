@@ -149,7 +149,9 @@ const ResponsePanel = memo(({
   systemState,
   setIsManual,
   triggerAnomaly,
-  resetSystem
+  resetSystem,
+  setValveAngle,
+  valveAngle
 }: any) => {
   const [isPending, setIsPending] = useState(false);
 
@@ -187,6 +189,31 @@ const ResponsePanel = memo(({
             </div>
             <span className="text-[9px] font-black text-emerald-500/80 uppercase tracking-widest">Reset System</span>
           </motion.button>
+        </div>
+
+        {/* Valve Position Slider */}
+        <div className="p-4 bg-slate-950/40 border border-slate-800/60 rounded-2xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-cyan-500/10 rounded-lg text-cyan-400">
+                <Settings size={14} className={isManual ? "" : "animate-spin-slow"} />
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Valve Position</span>
+            </div>
+            <span className="text-xs font-mono font-black text-cyan-400">{valveAngle ?? 0}°</span>
+          </div>
+          <input 
+            type="range" 
+            min="0" 
+            max="90" 
+            value={valveAngle ?? 0}
+            onChange={(e) => setValveAngle(parseInt(e.target.value))}
+            className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+          />
+          <div className="flex justify-between text-[8px] font-bold text-slate-600 uppercase tracking-tighter">
+            <span>Locked (0°)</span>
+            <span>Flow (90°)</span>
+          </div>
         </div>
 
         {/* AI Status Badge */}
@@ -256,7 +283,7 @@ const ResponsePanel = memo(({
           onClick={() => handleAction(() => setIsManual(!isManual))}
           className={`w-full py-4 mt-2 rounded-2xl border font-black text-xs transition-all duration-300 flex items-center justify-center gap-3 group relative overflow-hidden ${
             isManual 
-              ? 'bg-red-600 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)]' 
+              ? 'bg-red-500 border-red-400 text-white shadow-[0_0_30px_rgba(239,68,68,0.3)]' 
               : 'bg-slate-800/60 border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white'
           }`}
         >
@@ -340,6 +367,7 @@ export default function NeptuneAIEnterpriseDashboard() {
     riskScore = 0,
     systemState = "NORMAL",
     valveState = "OPEN",
+    valveAngle = 90,
     relayState = false,
     buzzerState = false,
     stability = 100,
@@ -492,6 +520,8 @@ export default function NeptuneAIEnterpriseDashboard() {
               setIsManual={setIsManual}
               triggerAnomaly={triggerAnomaly}
               resetSystem={resetSystem}
+              setValveAngle={setValveAngle}
+              valveAngle={valveAngle}
             />
           </div>
         </div>

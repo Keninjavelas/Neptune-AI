@@ -45,7 +45,7 @@ wss.on('connection', (ws, req) => {
       }
 
       // 2. Handle Commands (Dashboard -> ESP32)
-      if (data.command) {
+      if (data.command && typeof data.command === 'string' && data.command.length > 0) {
         console.log(`[DASHBOARD] Command received: ${data.command}`);
         console.log(`[BACKEND] Forwarding to ESP32 clients...`);
         

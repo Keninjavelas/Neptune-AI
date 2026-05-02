@@ -33,20 +33,25 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   // 2. Hardware Bridge (WebSocket)
   const hw = useHardwareTelemetry();
 
-  // 3. Dynamic Data Selection (Single Source of Truth)
+  // 3. Local mode tracking (Sync backup if hardware packet lacks the key)
+  const [localManualMode, setLocalManualMode] = React.useState(false);
+
+  // 4. Dynamic Data Selection (Single Source of Truth)
   const activeTelemetry = useMemo(() => {
-    // If live hardware is enabled AND we have a packet, it's the absolute truth.
+    // If live hardware is enabled AND we have a packet
     if (USE_LIVE_HARDWARE && hw.telemetry) {
-      return hw.telemetry;
+      return {
+        ...hw.telemetry,
+        // Fallback to local tracking only if hardware doesn't explicitly report it
+        isManual: hw.telemetry.isManual ?? localManualMode
+      };
     }
     // Otherwise fallback to simulation
     return sim.telemetry;
-  }, [hw.telemetry, sim.telemetry]);
+  }, [hw.telemetry, sim.telemetry, localManualMode]);
 
   // Combined logs
   const activeLogs = useMemo(() => {
-    // If hardware is active and has logs, we could potentially merge them
-    // For now, keeping sim logs for UI consistency as per Phase 2 requirements
     return sim.logs;
   }, [sim.logs]);
 
@@ -61,6 +66,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   const resetSystem = () => {
     if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
       hw.sendCommand("RESET_SYSTEM");
+      setLocalManualMode(false);
     } else {
       sim.resetSystem();
     }
@@ -69,6 +75,8 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   const setIsManual = (val: boolean) => {
     if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
       hw.sendCommand("MANUAL_OVERRIDE");
+      // Update local state so UI reflects the toggle immediately
+      setLocalManualMode(val);
     } else {
       sim.setIsManual(val);
     }
@@ -76,10 +84,10 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
 
   const setValveAngle = (angle: number) => {
     if (USE_LIVE_HARDWARE && hw.isHardwareConnected) {
-      // For demo, we treat any valve angle change as a MANUAL_OVERRIDE 
-      // or specific command if the ESP32 supports it. 
-      // Here we map to MANUAL_OVERRIDE as requested.
-      hw.sendCommand("MANUAL_OVERRIDE");
+      // Send specific angle command to ESP32
+      hw.sendCommand(`VALVE_ANGLE_${Math.round(angle)}`);
+      // When adjusting valve, we usually enter manual mode
+      setLocalManualMode(true);
     } else {
       sim.setValveAngle(angle);
     }
